@@ -58,9 +58,9 @@ def index():
 def restaurant(restaurant_id):
     conn = get_db()
     # --- own code ---
-    query = "SELECT * FROM restaurants WHERE id = " + restaurant_id
+    query = "SELECT * FROM restaurants WHERE id = " + str(restaurant_id)
     restaurant = conn.execute(query).fetchone()
-    query = "SELECT * FROM menu_items WHERE id = " + restaurant_id
+    query = "SELECT * FROM menu_items WHERE resturant_id = " + str(restaurant_id)
     menu = conn.execute(query).fetchall()
     # --- end of own code ---
     conn.close()
@@ -86,15 +86,20 @@ def register():
         name = request.form["name"].strip()
         email = request.form["email"].strip().lower()
         password = request.form["password"]
+        connect = sqlite3.connect(DATABASE)
+        connect.row_factory = sqlite3.Row
 
+        # Enable SQLite foreign keys for this connection
+        connect.execute("PRAGMA foreign_keys = ON")
+        conn = connect
         # Basic validation
         if not name or not email or not password:
             return render_template("register.html", error="All fields are required.")
 
-        conn = get_db()
+        #conn = get_db()
         # --- changes here, changed how the input is handled and saved ---
         try:
-            query = "INSERT INTO users (name, email, password) VALUES (\'"  + name  + "\',\'" + email + "\',\'" + password + "\')"
+            query = "INSERT INTO users (name, email, password) VALUES ('"  + name  + "','" + email + "','" + password + "')"
             conn.execute(query)
             conn.commit()
         # --- edit ends ---
@@ -120,9 +125,14 @@ def login():
         email = request.form["email"].strip().lower()
         password = request.form["password"]
 
-        conn = get_db()
+        connect = sqlite3.connect(DATABASE)
+        connect.row_factory = sqlite3.Row
+
+        # Enable SQLite foreign keys for this connection
+        connect.execute("PRAGMA foreign_keys = ON")
+        conn = connect
         # --- edited to add how email input is handled ---
-        query = "SELECT * FROM users WHERE email = \"" + email + "\" AND password = \"" + password + "\""
+        query = "SELECT * FROM users WHERE email ='" + email + "' AND password ='" + password + "'"
         user = conn.execute(query).fetchone()
         # --- edit end ---
         conn.close()
