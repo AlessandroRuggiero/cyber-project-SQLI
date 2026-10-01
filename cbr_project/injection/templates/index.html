@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Restaurants{% endblock %}
+{% block content %}
+<section class="hero"><h1>Food delivered to your door</h1><p>Choose a restaurant and start your order.</p></section>
+<h2>Restaurants</h2>
+<div class="restaurant-grid">
+{% for restaurant in restaurants %}
+<div class="restaurant-card">
+<h3>{{ restaurant["name"] }}</h3>
+{% if restaurant["description"] %}<p>{{ restaurant["description"] }}</p>{% endif %}
+<a class="button" href="{{ url_for('restaurant', restaurant_id=restaurant['id']) }}">View menu</a>
+</div>
+{% else %}<p>No restaurants are currently available.</p>{% endfor %}
+</div>
+{% endblock %}
