@@ -1,0 +1,42 @@
+### Ambiguous payloads — the proxy should NOT block these outright (expect 2xx/3xx),
+### but each should score as "suspicious" and raise the client's reputation.
+#
+# These sit between attacks.http (clearly malicious -> blocked) and benign.http
+# (clearly fine -> free). They carry a SQL keyword or a comment marker but no
+# full injection, so the simple rules in detector.py rate them SUSPICIOUS: the
+# request is forwarded, but the score goes up. Fire enough of them from one IP
+# and the reputation throttle kicks in — tarpit first, then 429. Watch the
+# proxy log for "suspicious", "THROTTLED" and finally "BANNED".
+
+@proxy = http://127.0.0.1:8080
+
+### A lone SQL keyword in a search box (could be a real search, could be probing)
+GET {{proxy}}/search?q=select
+
+### Semicolon + a read keyword: looks like a stacked query, but harmless on its own
+GET {{proxy}}/items?id=1; select 1
+
+### SQL comment sequence (--) buried in otherwise normal text
+GET {{proxy}}/search?q=buy-one--get-one
+
+### Double dash inside a form field
+POST {{proxy}}/register
+Content-Type: application/x-www-form-urlencoded
+
+name=cool--dude&email=cool@example.com&password=pw123456
+
+### Block comment /* */ in a free-text note
+POST {{proxy}}/api/order
+Content-Type: application/json
+
+{"note": "table 5 /* VIP guest */"}
+
+### UNION without SELECT — incomplete, so not an obvious attack
+GET {{proxy}}/items?cols=id,name union all
+
+### A bare SQL keyword in a header
+GET {{proxy}}/
+User-Agent: scanner/1.0 drop
+
+### Database-metadata reference, no working injection (example_metadata detector)
+GET {{proxy}}/search?q=information_schema

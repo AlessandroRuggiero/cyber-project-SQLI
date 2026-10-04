@@ -1,0 +1,87 @@
+"""Detector registry and the shared severity vocabulary.
+
+Each detector lives in its own module here and exposes a ``check_value(value)``
+that returns ``(Severity, reason)`` or ``None``. This package owns the
+``Severity`` enum and runs every registered detector, keeping the highest hit.
+
+A detector never returns ``None``: a value it does not flag is ``Severity.CLEAN``
+with an empty reason. To add a detector: drop a module in this folder with a
+``check_value`` function and add it to ``DETECTORS`` below. Order is not
+significant — ``check_value`` always keeps the highest severity.
+"""
+
+from enum import Enum
+from functools import total_ordering
+
+
+@total_ordering
+class Severity(Enum):
+    """How serious a flagged value is. Ordered: CLEAN < SUSPICIOUS < MALICIOUS.
+
+    CLEAN      -> forwarded, no reputation cost
+    SUSPICIOUS -> forwarded, but the client's suspicion score goes up a little
+    MALICIOUS  -> blocked, and the suspicion score goes up a lot
+    """
+
+    CLEAN = 0
+    SUSPICIOUS = 1
+    MALICIOUS = 2
+
+    def __str__(self):
+        # Keep log lines reading "suspicious" / "malicious", not "Severity.MALICIOUS".
+        return self.name.lower()
+
+    def __lt__(self, other):
+        if isinstance(other, Severity):
+            return self.value < other.value
+        return NotImplemented
+
+
+def words(text):
+    """Lowercased runs of letters in `text`.
+
+    "UNION, select1" -> ["union", "select"]. Used by detectors that want to
+    match whole SQL words rather than substrings (so "unionize" is not "union").
+    """
+    found, current = [], []
+    for ch in text:
+        if ch.isalpha():
+            current.append(ch.lower())
+        elif current:
+            found.append("".join(current))
+            current = []
+    if current:
+        found.append("".join(current))
+    return found
+
+
+# Imported after Severity/words are defined so each detector module can do
+# `from detectors import Severity, words` without a circular-import error.
+# These are EXAMPLE detectors — templates to copy and replace with your own.
+from . import (  # noqa: E402
+    example_obvious_injection,
+    example_sql_tokens,
+    example_time_based,
+    example_metadata,
+)
+
+# Every active detector.
+DETECTORS = (
+    example_obvious_injection.check_value,
+    example_sql_tokens.check_value,
+    example_time_based.check_value,
+    example_metadata.check_value,
+)
+
+
+def check_value(value):
+    """Run every detector over `value` and return the highest-severity (Severity, reason).
+
+    Returns ``(Severity.CLEAN, "")`` when nothing flags the value.
+    """
+    best = (Severity.CLEAN, "")
+    for detector in DETECTORS:
+        result = detector(value)
+        if result[0] > best[0]:
+            best = result
+    return best

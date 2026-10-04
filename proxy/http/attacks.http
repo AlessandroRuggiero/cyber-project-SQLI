@@ -1,0 +1,88 @@
+### SQL injection payloads — the proxy SHOULD block each of these (expect 403).
+#
+# These target the two injectable forms in ../../cbr_project (login, register)
+# plus arbitrary paths/headers served by echo_backend.py. Run them through the
+# proxy on :8080, never straight at the backend on :5000.
+#
+# VS Code "REST Client" / JetBrains HTTP client: click "Send Request" above each
+# block. The separator is "###".
+
+@proxy = http://127.0.0.1:8080
+
+### Classic tautology in the password field (the documented bypass -> admin)
+POST {{proxy}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email=x&password=1' OR '1' = '1
+
+### Tautology in the email field
+POST {{proxy}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email=' OR 1=1 --&password=x
+
+### Comment-out the rest of the query
+POST {{proxy}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email=admin'--&password=anything
+
+### UNION-based extraction
+POST {{proxy}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email=' UNION SELECT id, name, email, password, admin FROM users --&password=x
+
+### Register with an injected admin flag (string concatenation sink)
+POST {{proxy}}/register
+Content-Type: application/x-www-form-urlencoded
+
+name=hacker', 'h@x.com', 'pw', 1) --&email=h@x.com&password=pw
+
+### Stacked query / destructive statement
+POST {{proxy}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email=x'; DROP TABLE users; --&password=x
+
+### Boolean-blind probe
+POST {{proxy}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email=x' AND 1=1 --&password=x
+
+### Time-based blind (SQLite)
+POST {{proxy}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email=x' AND 1=randomblob(100000000) --&password=x
+
+### Injection in a query-string parameter
+GET {{proxy}}/search?q=' OR '1'='1
+
+### UNION in the query string
+GET {{proxy}}/items?id=1 UNION SELECT password FROM users
+
+### JSON body injection
+POST {{proxy}}/api
+Content-Type: application/json
+
+{"email": "' OR 1=1 --", "password": "x"}
+
+### Injection carried in a header (echo_backend logs it; real app may log it too)
+GET {{proxy}}/
+User-Agent: sqlmap' UNION SELECT 1 --
+
+### Injection carried in a cookie (no spaces: /**/ stands in for them, since a
+### cookie value is truncated at the first space before the filter sees it)
+GET {{proxy}}/
+Cookie: tracking=1'/**/OR/**/'1'='1
+
+### URL-encoded tautology (proxy sees it decoded as ' OR '1'='1)
+GET {{proxy}}/search?q=%27%20OR%20%271%27%3D%271
+
+### Time-based blind injection (example_time_based detector)
+POST {{proxy}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email=x' AND SLEEP(5)--&password=x

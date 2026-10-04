@@ -1,0 +1,59 @@
+### Legitimate requests — the proxy MUST let each of these through (expect 2xx/3xx).
+#
+# This is the false-positive guard: a filter that blocks these is too strict.
+# The hard cases are real values that merely resemble SQL: an apostrophe in a
+# name, the word "OR"/"SELECT"/"--" in ordinary text, operators in free text.
+
+@proxy = http://127.0.0.1:8080
+
+### Normal login
+POST {{proxy}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email=alice@example.com&password=correct-horse-battery
+
+### Registration with an apostrophe in the name (O'Brien)
+POST {{proxy}}/register
+Content-Type: application/x-www-form-urlencoded
+
+name=Conor O'Brien&email=conor@example.com&password=hunter2
+
+### Name that is literally the word "Select" or contains "or"
+POST {{proxy}}/register
+Content-Type: application/x-www-form-urlencoded
+
+name=Select Ortiz&email=select.ortiz@example.com&password=pw123456
+
+### Password that legitimately contains SQL-ish characters
+POST {{proxy}}/login
+Content-Type: application/x-www-form-urlencoded
+
+email=bob@example.com&password=a'b--c=1
+
+### Free-text search with the word "or" and a dash in it
+GET {{proxy}}/search?q=coffee or tea - decaf
+
+### Search for a dish name with an apostrophe
+GET {{proxy}}/search?q=shepherd's pie
+
+### Browsing a restaurant by id (integer path, never reaches SQL as a string)
+GET {{proxy}}/restaurant/1
+
+### Address at checkout with a comma, number and hyphen
+POST {{proxy}}/checkout
+Content-Type: application/x-www-form-urlencoded
+
+address=12 King's Road, Flat 3-B, London
+
+### JSON order with ordinary text
+POST {{proxy}}/api/order
+Content-Type: application/json
+
+{"note": "No onions, extra sauce. Call when you're outside."}
+
+### Normal User-Agent (a real browser string, must not trip the filter)
+GET {{proxy}}/
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36
+
+### Static asset
+GET {{proxy}}/static/style.css
