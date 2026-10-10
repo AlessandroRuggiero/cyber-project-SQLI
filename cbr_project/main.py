@@ -16,7 +16,11 @@ import os
 from pathlib import Path
 
 #main has been chanegd to main from app
-main = Flask(__name__)
+main = Flask(
+    __name__,
+    template_folder="website/templates",
+    static_folder="website/static",
+)
 
 # Used by Flask to protect session data.
 # Fine for local development, but use an environment variable

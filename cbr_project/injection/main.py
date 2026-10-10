@@ -12,9 +12,16 @@ from flask import (
 )
 
 import sqlite3
+from pathlib import Path
+
+WEBSITE_DIR = Path(__file__).resolve().parent.parent / "website"
 
 #main has been chanegd to main from app
-main = Flask(__name__)
+main = Flask(
+    __name__,
+    template_folder=str(WEBSITE_DIR / "injection/templates"),
+    static_folder=str(WEBSITE_DIR / "injection/static"),
+)
 
 # Used by Flask to protect session data.
 # Fine for local development, but use an environment variable

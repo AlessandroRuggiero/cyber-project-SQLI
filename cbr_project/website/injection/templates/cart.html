@@ -3,10 +3,34 @@
 {% block content %}
 <h1>Your Cart</h1>
 {% if items %}<div class="cart-list">
-{% for item in items %}<div class="cart-item"><div><h3>{{ item["name"] }}</h3><p>{{ "%.2f"|format(item["price"]) }} kr each</p></div>
-<div class="quantity-controls"><form action="{{ url_for('decrease_cart_item', item_id=item['id']) }}" method="POST"><button type="submit">−</button></form><span>{{ item["quantity"] }}</span><form action="{{ url_for('increase_cart_item', item_id=item['id']) }}" method="POST"><button type="submit">+</button></form></div>
-<div class="cart-subtotal"><strong>{{ "%.2f"|format(item["subtotal"]) }} kr</strong><form action="{{ url_for('remove_cart_item', item_id=item['id']) }}" method="POST"><button class="remove-button" type="submit">Remove</button></form></div></div>{% endfor %}</div>
-<div class="cart-total"><h2>Total: {{ "%.2f"|format(total) }} kr</h2></div>
-<div class="checkout"><h2>Delivery</h2><form action="{{ url_for('checkout') }}" method="POST"><label for="address">Delivery address</label><input type="text" id="address" name="address" placeholder="Example Street 12, Stockholm" required><button type="submit" class="checkout-button">Place order</button></form></div>
-{% else %}<div class="empty-cart"><h2>Your cart is empty</h2><p>Add something from one of our restaurants.</p><a class="button" href="{{ url_for('index') }}">Browse restaurants</a></div>{% endif %}
+    {% for item in items %}<div class="cart-item">
+        <div>
+            <h3>{{ item["name"] }}</h3>
+            <p>{{ "%.2f"|format(item["price"]) }} kr each</p>
+        </div>
+        <div class="quantity-controls">
+            <form action="{{ url_for('decrease_cart_item', item_id=item['id']) }}" method="POST"><button
+                    type="submit">−</button></form><span>{{ item["quantity"] }}</span>
+            <form action="{{ url_for('increase_cart_item', item_id=item['id']) }}" method="POST"><button
+                    type="submit">+</button></form>
+        </div>
+        <div class="cart-subtotal"><strong>{{ "%.2f"|format(item["subtotal"]) }} kr</strong>
+            <form action="{{ url_for('remove_cart_item', item_id=item['id']) }}" method="POST"><button
+                    class="remove-button" type="submit">Remove</button></form>
+        </div>
+    </div>{% endfor %}</div>
+<div class="cart-total">
+    <h2>Total: {{ "%.2f"|format(total) }} kr</h2>
+</div>
+<div class="checkout">
+    <h2>Delivery</h2>
+    <form action="{{ url_for('checkout') }}" method="POST"><label for="address">Delivery address</label><input
+            type="text" id="address" name="address" placeholder="Example Street 12, Stockholm" required><button
+            type="submit" class="checkout-button">Place order</button></form>
+</div>
+{% else %}<div class="empty-cart">
+    <h2>Your cart is empty</h2>
+    <p>Add something from one of our restaurants.</p><a class="button" href="{{ url_for('index') }}">Browse
+        restaurants</a>
+</div>{% endif %}
 {% endblock %}

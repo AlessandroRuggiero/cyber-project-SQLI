@@ -2,13 +2,18 @@
 {% block title %}{{ restaurant["name"] }}{% endblock %}
 {% block content %}
 <a href="{{ url_for('index') }}" class="back-link">← Back to restaurants</a>
-<h1>{{ restaurant["name"] }}</h1>
-{% if restaurant["description"] %}<p>{{ restaurant["description"] }}</p>{% endif %}
-<h2>Menu</h2>
+<section class="restaurant-header"><div><p class="eyebrow">Now serving</p><h1>{{ restaurant["name"] }}</h1>{% if restaurant["description"] %}<p>{{ restaurant["description"] }}</p>{% endif %}</div><img src="{{ url_for('static', filename='images/restaurant.jpg') }}" alt=""></section>
+<div class="section-heading"><div><p class="eyebrow">Made to order</p><h2>Menu</h2></div></div>
 <div class="menu-list">
-{% for item in menu %}
-<div class="menu-item"><div class="menu-information"><h3>{{ item["name"] }}</h3>{% if item["description"] %}<p>{{ item["description"] }}</p>{% endif %}<p class="price">{{ "%.2f"|format(item["price"]) }} kr</p></div>
-<form action="{{ url_for('add_to_cart', item_id=item['id']) }}" method="POST"><button type="submit">Add to cart</button></form></div>
-{% else %}<p>This restaurant currently has no menu items.</p>{% endfor %}
+    {% for item in menu %}
+    <div class="menu-item"><img src="{{ url_for('static', filename='images/dish.jpg') }}" alt="">
+        <div class="menu-information">
+            <h3>{{ item["name"] }}</h3>{% if item["description"] %}<p>{{ item["description"] }}</p>{% endif %}<p
+                class="price">{{ "%.2f"|format(item["price"]) }} kr</p>
+        </div>
+        <form action="{{ url_for('add_to_cart', item_id=item['id']) }}" method="POST"><button type="submit">Add to
+                cart</button></form>
+    </div>
+    {% else %}<p>This restaurant currently has no menu items.</p>{% endfor %}
 </div>
 {% endblock %}

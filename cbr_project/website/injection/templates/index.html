@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Restaurants{% endblock %}
 {% block content %}
-<section class="hero"><h1>Food delivered to your door</h1><p>Choose a restaurant and start your order.</p></section>
-<h2>Restaurants</h2>
+<section class="hero"><div><p class="eyebrow">Fresh picks, no fuss</p><h1>Good food is<br><span>just a few clicks away.</span></h1><p>Browse local favourites and get dinner delivered to your door.</p></div><img src="{{ url_for('static', filename='images/hero.jpg') }}" alt="A freshly prepared meal"></section>
+<div class="section-heading"><div><p class="eyebrow">Explore the menu</p><h2>Restaurants</h2></div><span>{{ restaurants|length }} places</span></div>
 <div class="restaurant-grid">
-{% for restaurant in restaurants %}
-<div class="restaurant-card">
-<h3>{{ restaurant["name"] }}</h3>
-{% if restaurant["description"] %}<p>{{ restaurant["description"] }}</p>{% endif %}
-<a class="button" href="{{ url_for('restaurant', restaurant_id=restaurant['id']) }}">View menu</a>
-</div>
-{% else %}<p>No restaurants are currently available.</p>{% endfor %}
+    {% for restaurant in restaurants %}
+    <div class="restaurant-card"><img src="{{ url_for('static', filename='images/restaurant.jpg') }}" alt=""><div class="card-content">
+        <h3>{{ restaurant["name"] }}</h3>
+        {% if restaurant["description"] %}<p>{{ restaurant["description"] }}</p>{% endif %}
+        <a class="button" href="{{ url_for('restaurant', restaurant_id=restaurant['id']) }}">View menu</a></div>
+    </div>
+    {% else %}<p>No restaurants are currently available.</p>{% endfor %}
 </div>
 {% endblock %}

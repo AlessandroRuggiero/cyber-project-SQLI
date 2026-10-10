@@ -37,3 +37,18 @@ flask --app cbr_project.main:main run
 The backend is available at http://127.0.0.1:5000. The version with input
 parameterization can be found in `cbr_project/injection`.
 The version with input parameterization can be found in the folder called "injection".
+
+## Project layout
+
+The Flask backends are in `cbr_project/main.py` (the default app) and
+`cbr_project/injection/main.py` (the parameterized comparison app). Their
+frontend files are grouped under `cbr_project/website`:
+
+- `cbr_project/website/templates` and `cbr_project/website/static` contain the
+  default app's templates and stylesheet.
+- `cbr_project/website/injection/templates` and
+  `cbr_project/website/injection/static` contain the comparison app's
+  templates and stylesheet.
+
+The database schema, seed data, and SQLite files remain directly under
+`cbr_project`; proxy code remains under `cbr_project/proxy`.
