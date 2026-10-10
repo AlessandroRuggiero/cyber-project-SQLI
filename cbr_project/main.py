@@ -86,7 +86,7 @@ def indexadmin():
 def edit(restaurant_id):
     conn = get_db()
 
-    restaurant = queries.find_restaurant(conn, restaurant_id)
+    restaurant = queries.find_restaurant_vuln(conn, restaurant_id)
 
     conn.close()
 
@@ -102,10 +102,10 @@ def edit(restaurant_id):
 # RESTAURANT PAGE
 # ============================================================
 
-@main.route("/restaurant/<int:restaurant_id>")
+@main.route("/restaurant/<restaurant_id>")
 def restaurant(restaurant_id):
     conn = get_db()
-    restaurant = queries.find_restaurant(conn, restaurant_id)
+    restaurant = queries.find_restaurant_vuln(conn, restaurant_id)
     menu = queries.list_menu_items(conn, restaurant_id)
     conn.close()
 

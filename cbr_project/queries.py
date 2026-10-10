@@ -13,11 +13,9 @@ def list_restaurants(conn):
     return conn.execute("SELECT * FROM restaurants").fetchall()
 
 
-def find_restaurant(conn, restaurant_id):
-    return conn.execute(
-        "SELECT * FROM restaurants WHERE id = ?",
-        (restaurant_id,),
-    ).fetchone()
+def find_restaurant_vuln(conn, restaurant_id):
+    query = "SELECT * FROM restaurants WHERE id = " + str(restaurant_id)
+    return conn.execute(query).fetchone()
 
 
 def list_menu_items(conn, restaurant_id):
@@ -38,7 +36,13 @@ def create_user(conn, name, email, password):
 
 
 def login_vulnerable(conn, email, password):
-    query = "SELECT * FROM users WHERE email ='" + email + "' AND password ='" + password + "'"
+    query = (
+        "SELECT * FROM users WHERE email ='"
+        + email
+        + "' AND password ='"
+        + password
+        + "'"
+    )
     return conn.execute(query).fetchone()
 
 
