@@ -14,7 +14,11 @@
 <div class="restaurant-grid">
 {% for restaurant in restaurants %}
 <div class="restaurant-card">
-<img src="{{ url_for('static', filename='images/restaurant.jpg') }}" alt="">
+{% if restaurant["id"] == 2 %}
+<img src="{{ url_for('static', filename='images/burger-barn.jpg') }}" alt="{{ restaurant['name'] }}">
+{% else %}
+<img src="{{ url_for('static', filename='images/restaurant.jpg') }}" alt="{{ restaurant['name'] }}">
+{% endif %}
 <div class="card-content">
 <h3>{{ restaurant["name"] }}</h3>
 {% if restaurant["description"] %}<p>{{ restaurant["description"] }}</p>{% endif %}

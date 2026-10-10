@@ -218,3 +218,6 @@ __marimo__/
 
 # dp container configuration (local to this machine)
 .dp/
+
+# Boolean extractor dump demo
+cbr_project/boolean/dump/*
