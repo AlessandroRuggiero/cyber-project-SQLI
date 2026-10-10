@@ -34,21 +34,21 @@ python3 cbr_project/init_db.py
 flask --app cbr_project.main:main run
 ```
 
-The backend is available at http://127.0.0.1:5000. The version with input
-parameterization can be found in `cbr_project/injection`.
-The version with input parameterization can be found in the folder called "injection".
+The backend is available at http://127.0.0.1:5000. The application is a single
+shared website with one deliberately vulnerable login query for the SQLi
+exercise; the remaining database queries use parameters.
+
+The training vulnerability is scoped to `POST /login`. Do not add new
+string-built SQL queries elsewhere: keeping the vulnerable surface small makes
+the exercise easier to understand and the application easier to maintain.
 
 ## Project layout
 
-The Flask backends are in `cbr_project/main.py` (the default app) and
-`cbr_project/injection/main.py` (the parameterized comparison app). Their
-frontend files are grouped under `cbr_project/website`:
+The Flask backend is in `cbr_project/main.py`, and its frontend files are
+grouped under `cbr_project/website`:
 
 - `cbr_project/website/templates` and `cbr_project/website/static` contain the
-  default app's templates and stylesheet.
-- `cbr_project/website/injection/templates` and
-  `cbr_project/website/injection/static` contain the comparison app's
-  templates and stylesheet.
+  templates, stylesheet, and images.
 
-The database schema, seed data, and SQLite files remain directly under
-`cbr_project`; proxy code remains under `cbr_project/proxy`.
+The database schema, seed data, and SQLite file remain directly under
+`cbr_project`. The proxy code remains under `cbr_project/proxy`.

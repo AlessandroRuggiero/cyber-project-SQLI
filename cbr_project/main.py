@@ -106,12 +106,14 @@ def edit(restaurant_id):
 @main.route("/restaurant/<int:restaurant_id>")
 def restaurant(restaurant_id):
     conn = get_db()
-    # --- own code ---
-    query = "SELECT * FROM restaurants WHERE id = " + str(restaurant_id)
-    restaurant = conn.execute(query).fetchone()
-    queryTwo = "SELECT * FROM menu_items WHERE restaurant_id = " + str(restaurant_id)
-    menu = conn.execute(queryTwo).fetchall()
-    # --- end of own code ---
+    restaurant = conn.execute(
+        "SELECT * FROM restaurants WHERE id = ?",
+        (restaurant_id,),
+    ).fetchone()
+    menu = conn.execute(
+        "SELECT * FROM menu_items WHERE restaurant_id = ?",
+        (restaurant_id,),
+    ).fetchall()
     conn.close()
 
     if restaurant is None:
@@ -135,23 +137,20 @@ def register():
         name = request.form["name"].strip()
         email = request.form["email"].strip().lower()
         password = request.form["password"]
-        connect = sqlite3.connect(DATABASE)
-        connect.row_factory = sqlite3.Row
-
-        # Enable SQLite foreign keys for this connection
-        connect.execute("PRAGMA foreign_keys = ON")
-        conn = connect
+        conn = get_db()
         # Basic validation
         if not name or not email or not password:
             return render_template("register.html", error="All fields are required.")
 
-        #conn = get_db()
-        # --- changes here, changed how the input is handled and saved ---
         try:
-            query = "INSERT INTO users (name, email, password, admin) VALUES ('"  + name  + "','" + email + "','" + password + "', 0)"
-            conn.execute(query)
+            conn.execute(
+                """
+                INSERT INTO users (name, email, password, admin)
+                VALUES (?, ?, ?, ?)
+                """,
+                (name, email, password, 0),
+            )
             conn.commit()
-        # --- edit ends ---
         except sqlite3.IntegrityError:
             conn.close()
             return render_template("register.html",error="That email is already registered.")
@@ -174,23 +173,14 @@ def login():
         email = request.form["email"].strip().lower()
         password = request.form["password"]
 
-        connect = sqlite3.connect(DATABASE)
-        connect.row_factory = sqlite3.Row
-
-        # Enable SQLite foreign keys for this connection
-        connect.execute("PRAGMA foreign_keys = ON")
-        conn = connect
-        # --- edited to add how email input is handled ---
+        conn = get_db()
+        # Deliberately vulnerable training endpoint: keep this query
+        # interpolated so the proxy and SQLi exercises have a target.
         query = "SELECT * FROM users WHERE email ='" + email + "' AND password ='" + password + "'"
-        user = conn.execute(query).fetchone()#                                   1' OR '1' = '1 <- log in into test
-        # --- edit end ---
+        user = conn.execute(query).fetchone()
         conn.close()
-
-        # --- edited from original code because passwords are handled differently ---
-        # Same error for incorrect email or password.
         if user is None:
             return render_template("login.html",error="Invalid email or password.")
-        # --- here does the edit end ---
 
         # Store the logged-in user's ID in the session
         session["user_id"] = user["id"]
