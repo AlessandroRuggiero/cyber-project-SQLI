@@ -12,7 +12,7 @@ def enable_foreign_keys(conn):
 def list_restaurants(conn):
     return conn.execute("SELECT * FROM restaurants").fetchall()
 
-
+# vulnerable to boolean-based SQLi
 def find_restaurant_vuln(conn, restaurant_id):
     query = "SELECT * FROM restaurants WHERE id = " + str(restaurant_id)
     return conn.execute(query).fetchone()
