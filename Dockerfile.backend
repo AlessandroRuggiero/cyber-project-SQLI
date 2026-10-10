@@ -14,4 +14,4 @@ RUN mkdir -p /data
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "python cbr_project/init_db.py && flask --app cbr_project.main:main run --host=0.0.0.0 --port=5000"]
+CMD ["sh", "-c", "python -m cbr_project.init_db && flask --app cbr_project.main:main run --host=0.0.0.0 --port=5000"]

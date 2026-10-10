@@ -15,6 +15,8 @@ import sqlite3
 import os
 from pathlib import Path
 
+from . import queries
+
 #main has been chanegd to main from app
 main = Flask(
     __name__,
@@ -42,7 +44,7 @@ def get_db():
     conn.row_factory = sqlite3.Row
 
     # Enable SQLite foreign keys for this connection
-    conn.execute("PRAGMA foreign_keys = ON")
+    queries.enable_foreign_keys(conn)
 
     return conn
 
@@ -54,7 +56,7 @@ def get_db():
 @main.route("/")
 def index():
     conn = get_db()
-    restaurants = conn.execute("SELECT * FROM restaurants").fetchall()
+    restaurants = queries.list_restaurants(conn)
     # --- edit for admin stuff ---
     #print(session.get("user_id"))
     #admin = session["admin"]
@@ -72,7 +74,7 @@ def index():
 @main.route("/indexadmin")
 def indexadmin():
     conn = get_db()
-    restaurants = conn.execute("SELECT * FROM restaurants").fetchall()
+    restaurants = queries.list_restaurants(conn)
     conn.close()
     return render_template("indexadmin.html",restaurants=restaurants)
 
@@ -84,10 +86,7 @@ def indexadmin():
 def edit(restaurant_id):
     conn = get_db()
 
-    restaurant = conn.execute(
-        "SELECT * FROM restaurants WHERE id = ?",
-        (restaurant_id,)
-    ).fetchone()
+    restaurant = queries.find_restaurant(conn, restaurant_id)
 
     conn.close()
 
@@ -106,14 +105,8 @@ def edit(restaurant_id):
 @main.route("/restaurant/<int:restaurant_id>")
 def restaurant(restaurant_id):
     conn = get_db()
-    restaurant = conn.execute(
-        "SELECT * FROM restaurants WHERE id = ?",
-        (restaurant_id,),
-    ).fetchone()
-    menu = conn.execute(
-        "SELECT * FROM menu_items WHERE restaurant_id = ?",
-        (restaurant_id,),
-    ).fetchall()
+    restaurant = queries.find_restaurant(conn, restaurant_id)
+    menu = queries.list_menu_items(conn, restaurant_id)
     conn.close()
 
     if restaurant is None:
@@ -143,13 +136,7 @@ def register():
             return render_template("register.html", error="All fields are required.")
 
         try:
-            conn.execute(
-                """
-                INSERT INTO users (name, email, password, admin)
-                VALUES (?, ?, ?, ?)
-                """,
-                (name, email, password, 0),
-            )
+            queries.create_user(conn, name, email, password)
             conn.commit()
         except sqlite3.IntegrityError:
             conn.close()
@@ -174,10 +161,7 @@ def login():
         password = request.form["password"]
 
         conn = get_db()
-        # Deliberately vulnerable training endpoint: keep this query
-        # interpolated so the proxy and SQLi exercises have a target.
-        query = "SELECT * FROM users WHERE email ='" + email + "' AND password ='" + password + "'"
-        user = conn.execute(query).fetchone()
+        user = queries.login_vulnerable(conn, email, password)
         conn.close()
         if user is None:
             return render_template("login.html",error="Invalid email or password.")
@@ -218,7 +202,7 @@ def add_to_cart(item_id):
         return redirect(url_for("login"))
 
     conn = get_db()
-    item = conn.execute("""SELECT * FROM menu_items WHERE id = ?""",(item_id,)).fetchone()
+    item = queries.find_menu_item(conn, item_id)
 
     conn.close()
 
@@ -255,7 +239,7 @@ def cart():
     conn = get_db()
 
     for item_id, quantity in cart_data.items():
-        item = conn.execute("""SELECT * FROM menu_items WHERE id = ?""",(item_id,)).fetchone()
+        item = queries.find_menu_item(conn, item_id)
         if item is not None:
             subtotal = item["price"] * quantity
             total += subtotal
@@ -348,49 +332,18 @@ def checkout():
 
     conn = get_db()
     try:
-        cursor = conn.execute(
-            """
-            INSERT INTO orders
-                (user_id, address, status)
-            VALUES
-                (?, ?, ?)
-            """,
-            (
-                session["user_id"],
-                address,
-                "pending"
-            )
-        )
+        cursor = queries.create_order(conn, session["user_id"], address)
 
         order_id = cursor.lastrowid
         for item_id, quantity in cart.items():
 
             # Verify that the menu item actually exists
-            item = conn.execute(
-                """
-                SELECT id
-                FROM menu_items
-                WHERE id = ?
-                """,
-                (item_id,)
-            ).fetchone()
+            item = queries.find_order_item(conn, item_id)
 
             if item is None:
                 continue
 
-            conn.execute(
-                """
-                INSERT INTO order_items
-                    (order_id, menu_item_id, quantity)
-                VALUES
-                    (?, ?, ?)
-                """,
-                (
-                    order_id,
-                    item_id,
-                    quantity
-                )
-            )
+            queries.create_order_item(conn, order_id, item_id, quantity)
 
         conn.commit()
 
@@ -422,39 +375,13 @@ def order_confirmation(order_id):
 
     conn = get_db()
 
-    order = conn.execute(
-        """
-        SELECT *
-        FROM orders
-        WHERE id = ?
-        AND user_id = ?
-        """,
-        (
-            order_id,
-            session["user_id"]
-        )
-    ).fetchone()
+    order = queries.find_order(conn, order_id, session["user_id"])
 
     if order is None:
         conn.close()
         abort(404)
 
-    items = conn.execute(
-        """
-        SELECT
-            menu_items.name,
-            menu_items.price,
-            order_items.quantity
-
-        FROM order_items
-
-        JOIN menu_items
-        ON menu_items.id = order_items.menu_item_id
-
-        WHERE order_items.order_id = ?
-        """,
-        (order_id,)
-    ).fetchall()
+    items = queries.list_order_items(conn, order_id)
 
     conn.close()
 

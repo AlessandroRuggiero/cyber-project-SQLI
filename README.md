@@ -30,7 +30,7 @@ The backend can also be run without Docker:
 python3 -m venv .venv
 source .venv/bin/activate
 python3 -m pip install -r requirements.txt
-python3 cbr_project/init_db.py
+python3 -m cbr_project.init_db
 flask --app cbr_project.main:main run
 ```
 
