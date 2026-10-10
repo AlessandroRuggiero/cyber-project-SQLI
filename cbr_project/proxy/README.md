@@ -1,6 +1,6 @@
 # SQLi filtering proxy
 
-An async reverse proxy written in Python with FastAPI and httpx, served by uvicorn. It sits in front of the vulnerable app in `../cbr_project` and inspects every request for SQL injection before forwarding it. It is async so the reputation tarpit can delay a request with `await asyncio.sleep` — which frees the event loop instead of tying up a thread.
+An async reverse proxy written in Python with FastAPI and httpx, served by uvicorn. It sits in front of the vulnerable app in `..` and inspects every request for SQL injection before forwarding it. It is async so the reputation tarpit can delay a request with `await asyncio.sleep` — which frees the event loop instead of tying up a thread.
 
 ```
 browser ──► proxy (:8080) ──► cbr_project (:5000)
@@ -44,7 +44,7 @@ pip install -r requirements-dev.txt
 pytest
 
 # terminal 1: the vulnerable backend
-cd ../cbr_project && python main.py
+cd .. && python main.py
 
 # terminal 2: the proxy (uvicorn; `python app.py` is equivalent)
 uvicorn app:app --host 127.0.0.1 --port 8080

@@ -12,6 +12,8 @@ from flask import (
 )
 
 import sqlite3
+import os
+from pathlib import Path
 
 #main has been chanegd to main from app
 main = Flask(__name__)
@@ -19,9 +21,12 @@ main = Flask(__name__)
 # Used by Flask to protect session data.
 # Fine for local development, but use an environment variable
 # with a random secret in production.
-main.secret_key = "development-secret-key"
+main.secret_key = os.environ.get("SECRET_KEY", "development-secret-key")
 
-DATABASE = "database.db"
+DATABASE = os.environ.get(
+    "DATABASE_PATH",
+    str(Path(__file__).with_name("database.db")),
+)
 
 
 # ============================================================

@@ -8,8 +8,8 @@ value to them through `check_value()`.
 
 from dataclasses import dataclass
 
-import detectors
-from detectors import Severity  # re-exported so callers can use detector.Severity
+import cbr_project.proxy.detectors as detectors
+from cbr_project.proxy.detectors import Severity  # re-exported so callers can use detector.Severity
 
 # Headers that are attacker-controlled and commonly end up in SQL queries
 # (logging tables, analytics...). Extend as needed.

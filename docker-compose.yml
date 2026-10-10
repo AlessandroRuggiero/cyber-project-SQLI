@@ -1,0 +1,27 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      DATABASE_PATH: /data/database.db
+      SECRET_KEY: ${SECRET_KEY:-development-secret-key}
+    volumes:
+      - database-data:/data
+    expose:
+      - "5000"
+
+  proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile.proxy
+    depends_on:
+      - backend
+    environment:
+      BACKEND_URL: http://backend:5000
+      BLOCK_MODE: ${BLOCK_MODE:-block}
+    ports:
+      - "${PROXY_PORT:-8080}:8080"
+
+volumes:
+  database-data:

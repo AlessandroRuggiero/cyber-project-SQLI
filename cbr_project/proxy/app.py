@@ -21,10 +21,10 @@ from urllib.parse import parse_qsl
 import httpx
 from fastapi import FastAPI, Request, Response
 
-import config
-import detector
-import reputation
-from detector import Severity
+import cbr_project.proxy.config as config
+import cbr_project.proxy.detector as detector
+import cbr_project.proxy.reputation as reputation
+from cbr_project.proxy.detector import Severity
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("proxy")
