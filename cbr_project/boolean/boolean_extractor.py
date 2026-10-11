@@ -6,26 +6,34 @@ from urllib.parse import parse_qsl
 import requests
 
 MAX_OUT_LENGTH = 80
+DEBUG = False
+
+
+def debug_print(*args, **kwargs):
+    if DEBUG:
+        print(*args, **kwargs)
 
 
 # Main API method
-def run_query(query, args):
+def run_query(query, args, show_result=True):
     """
     Extract a single-string result.
     The query must return exactly one string value
     """
     length = get_length(query, args)
     if length == 0:
-        print("[!] Length is 0 - nothing to extract or query failed.")
+        debug_print("[!] Length is 0 - nothing to extract or query failed.")
         return ""
 
-    print(f"[*] Extracting {length} characters...")
+    debug_print(f"[*] Extracting {length} characters...")
     result = ""
     for pos in range(1, length + 1):
         result += extract_char(query, pos, args)
-        sys.stdout.write(f"\r[+] Current: {result}")
-        sys.stdout.flush()
-    print()
+        if show_result:
+            sys.stdout.write(f"\r[+] Query result: {result}")
+            sys.stdout.flush()
+    if show_result:
+        print()
     return result
 
 
@@ -53,7 +61,7 @@ def send_request(url, method, data, headers, cookies, timeout):
     except requests.exceptions.Timeout:
         return None
     except Exception as e:
-        print(f"[!] Request error: {e}")
+        debug_print(f"[!] Request error: {e}")
         return None
 
 
@@ -92,7 +100,7 @@ def request_options(args):
 
 
 def get_length(query, args):
-    print(f"[*] Determining length of: {query}")
+    debug_print(f"[*] Determining length of: {query}")
     low, high = 0, getattr(args, "max_length", MAX_OUT_LENGTH)
     length = 0
 
@@ -105,7 +113,7 @@ def get_length(query, args):
         else:
             high = mid - 1
 
-    print(f"[+] Length = {length}")
+    debug_print(f"[+] Query length: {length}")
     return length
 
 
