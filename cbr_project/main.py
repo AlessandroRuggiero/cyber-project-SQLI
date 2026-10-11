@@ -396,6 +396,43 @@ def order_confirmation(order_id):
         items=items,
         total=total
     )
+
+
+# ============================================================
+# AUTHENTICATED ORDER LOOKUP (INTENTIONALLY VULNERABLE)
+# ============================================================
+
+@main.route("/order/lookup", methods=["GET", "POST"])
+def order_lookup():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    if request.method == "GET":
+        return render_template("order_lookup.html")
+
+    order_id = request.form["order_id"].strip()
+    conn = get_db()
+    order = queries.find_order_vulnerable(conn, order_id, session["user_id"])
+
+    if order is None:
+        conn.close()
+        return render_template(
+            "order_lookup.html",
+            error="Order not found.",
+        ), 404
+
+    items = queries.list_order_items(conn, order["id"])
+    conn.close()
+    total = sum(item["price"] * item["quantity"] for item in items)
+
+    return render_template(
+        "order.html",
+        order=order,
+        items=items,
+        total=total,
+    )
+
+
 # ============================================================
 # START SERVER
 # ============================================================

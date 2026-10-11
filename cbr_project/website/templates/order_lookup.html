@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Find an Order{% endblock %}
+{% block content %}
+<div class="auth-container"><div class="auth-card"><h1>Find an order</h1>
+{% if error %}<div class="error-message">{{ error }}</div>{% endif %}
+<form action="{{ url_for('order_lookup') }}" method="POST">
+<label for="order_id">Order ID</label>
+<input type="text" id="order_id" name="order_id" required>
+<button type="submit">Find order</button>
+</form></div></div>
+{% endblock %}

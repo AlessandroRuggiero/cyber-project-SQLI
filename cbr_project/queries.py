@@ -1,7 +1,7 @@
 """SQL queries used by the website.
 
-The login query is intentionally vulnerable for the SQL injection exercise.
-All other application queries use SQLite parameters.
+The login and authenticated order lookup queries are intentionally vulnerable
+for the SQL injection exercise. All other application queries use parameters.
 """
 
 
@@ -11,6 +11,7 @@ def enable_foreign_keys(conn):
 
 def list_restaurants(conn):
     return conn.execute("SELECT * FROM restaurants").fetchall()
+
 
 # vulnerable to boolean-based SQLi
 def find_restaurant_vuln(conn, restaurant_id):
@@ -98,6 +99,11 @@ def find_order(conn, order_id, user_id):
         """,
         (order_id, user_id),
     ).fetchone()
+
+
+def find_order_vulnerable(conn, order_id, user_id):
+    query = "SELECT * FROM orders WHERE user_id = ? AND id = " + str(order_id)
+    return conn.execute(query, (user_id,)).fetchone()
 
 
 def list_order_items(conn, order_id):
