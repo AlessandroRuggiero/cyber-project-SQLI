@@ -106,13 +106,14 @@ def test_backend_down_returns_502(backend, client):
 
 def test_extract_inputs_covers_all_locations():
     inputs = detector.extract_inputs(
-        path="/restaurant/1",
-        query=[("q", "x")],
+        path="/restaurant",
+        query=[("id", "1"), ("q", "x")],
         json_data={"user": {"name": "bob"}, "ids": [1, 2]},
         cookies=[("c", "v")],
         headers={"User-Agent": "ua"},
     )
-    assert ("path", "", "/restaurant/1") in inputs
+    assert ("path", "", "/restaurant") in inputs
+    assert ("query", "id", "1") in inputs
     assert ("query", "q", "x") in inputs
     assert ("json", "user.name", "bob") in inputs
     assert ("json", "ids[1]", "2") in inputs

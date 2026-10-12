@@ -107,7 +107,7 @@ def build_parser():
         epilog="""
 Example:
   python db_dumper.py \\
-      -u "http://localhost:8080/restaurant/{payload}" \\
+      -u "http://localhost:8080/restaurant?id={payload}" \\
       --payload "1 AND ({cond}) --" \\
       --max-rows 100
         """,

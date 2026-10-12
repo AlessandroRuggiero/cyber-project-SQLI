@@ -36,8 +36,8 @@ GET {{proxy}}/search?q=coffee or tea - decaf
 ### Search for a dish name with an apostrophe
 GET {{proxy}}/search?q=shepherd's pie
 
-### Browsing a restaurant by id (integer path, never reaches SQL as a string)
-GET {{proxy}}/restaurant/1
+### Browsing a restaurant by id
+GET {{proxy}}/restaurant?id=1
 
 ### Address at checkout with a comma, number and hyphen
 POST {{proxy}}/checkout

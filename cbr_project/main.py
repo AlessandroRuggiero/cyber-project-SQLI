@@ -102,8 +102,12 @@ def edit(restaurant_id):
 # RESTAURANT PAGE
 # ============================================================
 
-@main.route("/restaurant/<restaurant_id>")
-def restaurant(restaurant_id):
+@main.route("/restaurant")
+def restaurant():
+    restaurant_id = request.args.get("id")
+    if restaurant_id is None:
+        return "Restaurant not found", 404
+
     conn = get_db()
     restaurant = queries.find_restaurant_vuln(conn, restaurant_id)
     menu = queries.list_menu_items(conn, restaurant_id)
@@ -221,7 +225,7 @@ def add_to_cart(item_id):
 
     session["cart"] = cart
 
-    return redirect(url_for("restaurant",restaurant_id=item["restaurant_id"]))
+    return redirect(url_for("restaurant", id=item["restaurant_id"]))
 
 
 # ============================================================

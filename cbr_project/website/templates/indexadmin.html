@@ -9,7 +9,7 @@
 <div class="restaurant-card">
 <h3>{{ restaurant["name"] }}</h3>
 {% if restaurant["description"] %}<p>{{ restaurant["description"] }}</p>{% endif %}
-<a class="button" href="{{ url_for('restaurant', restaurant_id=restaurant['id']) }}">View menu</a>
+<a class="button" href="{{ url_for('restaurant', id=restaurant['id']) }}">View menu</a>
 {% if session.get("admin") %}
 <a class="button" href="{{ url_for('edit', restaurant_id=restaurant['id']) }}">edit</a>{% endif %}
 </div>

@@ -22,7 +22,7 @@
 <div class="card-content">
 <h3>{{ restaurant["name"] }}</h3>
 {% if restaurant["description"] %}<p>{{ restaurant["description"] }}</p>{% endif %}
-<a class="button" href="{{ url_for('restaurant', restaurant_id=restaurant['id']) }}">View menu</a>
+<a class="button" href="{{ url_for('restaurant', id=restaurant['id']) }}">View menu</a>
 </div>
 </div>
 {% else %}<p>No restaurants are currently available.</p>{% endfor %}
