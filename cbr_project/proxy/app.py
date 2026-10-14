@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from collections.abc import AsyncIterator, Iterable
+from collections.abc import AsyncGenerator, Iterable
 from contextlib import asynccontextmanager
 from urllib.parse import parse_qsl
 
@@ -40,7 +40,7 @@ client: httpx.AsyncClient | None = None
 
 
 @asynccontextmanager
-async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
     global client
     async with httpx.AsyncClient(timeout=config.BACKEND_TIMEOUT) as c:
         client = c
