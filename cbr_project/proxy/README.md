@@ -35,6 +35,9 @@ browser ──► proxy (:8080) ──► cbr_project (:5000)
 | `THROTTLE_THRESHOLD` / `BAN_THRESHOLD` | `10` / `25` | Score above which requests are tarpitted / rejected with 429 |
 | `MAX_THROTTLE_DELAY` | `5` | Cap on the tarpit delay, in seconds |
 | `BAN_COOLDOWN` | `30` | `Retry-After` sent while an IP is banned, in seconds |
+| `DROP_BELOW` | `0.1` | A decayed score under this is treated as zero, so the IP can be forgotten |
+| `SOFT_PRUNE_AT` | `10000` | Past this many tracked IPs, drop the dead (fully decayed) ones |
+| `HARD_PRUNE_AT` / `HARD_PRUNE_TARGET` | `12000` / `10000` | If still above `HARD_PRUNE_AT` after that, also evict the lowest scores down to `HARD_PRUNE_TARGET` |
 
 ## Running
 
@@ -102,6 +105,7 @@ The detectors are all `example_*` modules — deliberately crude plain-string ch
 Two `.http` files to exercise a running proxy:
 
 - `attacks.http` — SQL injection in forms, query strings, JSON, a header and a cookie. Every request should be **blocked** (403, or 429 once the score piles up).
+- `boolean.http` — the boolean-blind extraction from `cbr_project/boolean` (oracle probes, `db_dumper.py` queries on `/restaurant?id=` and `/order/lookup`) plus evasions of the same oracle. Every request should be **blocked**; today most are only rated *suspicious*, so they pass.
 - `benign.http` — legitimate requests, including values that merely look like SQL (`O'Brien`, `coffee or tea`, a password with `'`, `-` and `=`). Every request must **pass**. This is the false-positive guard.
 - `mixed.http` — ambiguous requests (a lone SQL keyword, a `--` or `/* */` in otherwise normal text). Each is **forwarded** but rated *suspicious*, so firing the file raises the client's score and the tarpit progressively kicks in. The proxy log shows `suspicious` → `THROTTLED`.
 

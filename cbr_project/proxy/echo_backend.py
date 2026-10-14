@@ -1,8 +1,5 @@
-"""Stand-in backend for developing filters: logs every request that reaches it.
-
-Run it instead of ../cbr_project on the same port, and the proxy needs no
-changes. Anything the filter blocked never shows up here; anything it let
-through is logged and echoed back as JSON, exactly as the backend received it.
+"""Stand-in backend for developing filters: logs every request that reaches it and echoes it back as JSON.
+This is AI-generated and its only ment to be used for debugging and testing. 
 """
 
 import logging

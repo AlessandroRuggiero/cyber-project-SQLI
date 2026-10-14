@@ -1,14 +1,4 @@
-"""EXAMPLE detector: obvious SQL injection -> MALICIOUS (blocked outright).
-
-One of the bundled example detectors — a template to copy, not a finished WAF.
-Plain string checks (no regex), one helper per shape of attack:
-  * a quote then a comment            — admin'--
-  * a quoted tautology                — ' OR '1 , ' OR 1
-  * a bare boolean equality           — OR 1=1
-  * UNION SELECT                      — ' UNION SELECT ...
-  * a stacked write statement         — '; DROP TABLE ...
-Deliberately crude; easy to read and easy to bypass. Tune it.
-"""
+"""EXAMPLE detector: obvious SQL injection (tautology, UNION, stacked write, quote+comment) -> MALICIOUS."""
 
 from . import Severity, words
 

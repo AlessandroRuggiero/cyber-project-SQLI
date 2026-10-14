@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-"""Minimal .http runner: send every request in a .http file and print the status.
-
-Usage:
-    python http/run_http.py http/attacks.http --expect 403
-    python http/run_http.py http/benign.http  --expect 2xx,3xx
-
-Supports the subset the .http files here use: `@name = value` variables,
-`### title` separators, a request line (`METHOD url`), headers, a blank line,
-then a body. Not a full REST Client implementation.
-"""
+"""Minimal .http runner: send every request in a .http file and print the status."""
 
 import argparse
 import re

@@ -1,14 +1,4 @@
-"""Detector registry and the shared severity vocabulary.
-
-Each detector lives in its own module here and exposes a ``check_value(value)``
-that returns ``(Severity, reason)`` or ``None``. This package owns the
-``Severity`` enum and runs every registered detector, keeping the highest hit.
-
-A detector never returns ``None``: a value it does not flag is ``Severity.CLEAN``
-with an empty reason. To add a detector: drop a module in this folder with a
-``check_value`` function and add it to ``DETECTORS`` below. Order is not
-significant — ``check_value`` always keeps the highest severity.
-"""
+"""Detector registry and the shared severity vocabulary: each module exposes check_value(value) -> (Severity, reason)."""
 
 from enum import Enum
 from functools import total_ordering

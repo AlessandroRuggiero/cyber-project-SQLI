@@ -1,15 +1,13 @@
-"""SQL injection detection: the plug-in point of the proxy.
+"""SQL injection detection: the plug-in point of the proxy, delegating each value to detectors/."""
 
-The web layer calls `extract_inputs(...)` then `inspect(...)`. The individual
-detectors live in the `detectors/` package, one per file; this module owns the
-request-level framework (input extraction, findings, verdict) and delegates each
-value to them through `check_value()`.
-"""
-
+from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
+from typing import Literal
 
 import cbr_project.proxy.detectors as detectors
 from cbr_project.proxy.detectors import Severity  # re-exported so callers can use detector.Severity
+
+Location = Literal["path", "query", "form", "json", "body", "cookie", "header"]
 
 # Headers that are attacker-controlled and commonly end up in SQL queries
 # (logging tables, analytics...). Extend as needed.
@@ -18,14 +16,15 @@ INSPECTED_HEADERS = ("User-Agent", "Referer", "X-Forwarded-For")
 
 @dataclass
 class Finding:
-    location: str  # "path", "query", "form", "json", "body", "cookie", "header"
+    location: Location
     name: str      # parameter / cookie / header name ("" for path and raw body)
     value: str          # the offending value as received
     severity: Severity  # Severity.SUSPICIOUS or Severity.MALICIOUS
     reason: str         # why check_value() flagged it
 
 
-def _flatten_json(data, prefix=""):
+# Path style follows JSONPath's dot/bracket addressing (IETF draft-ietf-jsonpath-base-05): a.b[0].
+def _flatten_json(data: object, prefix: str = "") -> Iterator[tuple[str, str]]:
     """Yield (dotted.name, value) for every scalar leaf of a JSON document."""
     if isinstance(data, dict):
         for key, value in data.items():
@@ -37,20 +36,18 @@ def _flatten_json(data, prefix=""):
         yield prefix, str(data)
 
 
-def extract_inputs(*, path, query=(), form=(), json_data=None, body="",
-                   cookies=(), headers=None):
-    """Collect every attacker-controlled value of a request into (location, name, value).
-
-    Framework-agnostic: the web layer decodes the request and passes the pieces.
-      path       str
-      query      iterable of (name, value)   — already URL-decoded
-      form       iterable of (name, value)   — urlencoded/multipart fields
-      json_data  parsed JSON, or None
-      body       raw text body (when it is neither form nor JSON)
-      cookies    iterable of (name, value)
-      headers    case-insensitive mapping with .get(name)
-    """
-    inputs = [("path", "", path)]
+def extract_inputs(
+    *,
+    path: str,
+    query: Iterable[tuple[str, str]] = (),  # already URL-decoded
+    form: Iterable[tuple[str, str]] = (),
+    json_data: object = None,
+    body: str = "",
+    cookies: Iterable[tuple[str, str]] = (),
+    headers: Mapping[str, str] | None = None,  # case-insensitive .get(name)
+) -> list[tuple[Location, str, str]]:
+    """Collect every attacker-controlled value of a request into (location, name, value)."""
+    inputs: list[tuple[Location, str, str]] = [("path", "", path)]
 
     for name, value in query:
         inputs.append(("query", name, value))
@@ -76,26 +73,14 @@ def extract_inputs(*, path, query=(), form=(), json_data=None, body="",
     return inputs
 
 
-def check_value(value):
-    """Decide whether a single value looks like a SQL injection.
-
-    Runs every detector in the `detectors/` package and keeps the highest
-    severity. Returns ``(Severity, reason)``; a clean value is
-    ``(Severity.CLEAN, "")``.
-    """
-    return detectors.check_value(value)
-
-
-def inspect(inputs):
-    """Run check_value() over a list of (location, name, value) and return findings."""
-    findings = []
+def inspect(inputs: list[tuple[Location, str, str]]) -> list[Finding]:
+    findings: list[Finding] = []
     for location, name, value in inputs:
-        severity, reason = check_value(value)
+        severity, reason = detectors.check_value(value)
         if severity is not Severity.CLEAN:
             findings.append(Finding(location, name, value, severity, reason))
     return findings
 
 
-def verdict(findings):
-    """Reduce findings to a single verdict: the highest severity, or CLEAN."""
+def verdict(findings: list[Finding]) -> Severity:
     return max((f.severity for f in findings), default=Severity.CLEAN)

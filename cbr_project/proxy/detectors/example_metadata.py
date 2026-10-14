@@ -1,12 +1,4 @@
-"""EXAMPLE detector: database-metadata / recon tokens -> SUSPICIOUS.
-
-One of the bundled example detectors — a template to copy, not a finished WAF.
-These tokens show up when an attacker is enumerating the database (schema,
-version, current user) rather than attacking a specific query. They are strong
-hints but not a working injection on their own, so this flags SUSPICIOUS: the
-request is forwarded, but repeated recon drives the client's score up and the
-reputation throttle eventually kicks in.
-"""
+"""EXAMPLE detector: database-metadata / recon tokens (information_schema, sqlite_master, ...) -> SUSPICIOUS."""
 
 from . import Severity
 

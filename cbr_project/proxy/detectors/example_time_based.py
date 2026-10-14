@@ -1,10 +1,4 @@
-"""EXAMPLE detector: time-based blind injection -> MALICIOUS.
-
-One of the bundled example detectors — a template to copy, not a finished WAF.
-Time-based blind SQLi makes the database pause so the attacker reads the answer
-from the response time. The function names below do not occur in normal input,
-so a plain case-insensitive substring match is enough.
-"""
+"""EXAMPLE detector: time-based blind injection (SLEEP / pg_sleep / WAITFOR DELAY) -> MALICIOUS."""
 
 from . import Severity
 

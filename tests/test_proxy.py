@@ -1,12 +1,17 @@
+import types
+
 import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-import app as proxy_app
-import config
-import detector
-import reputation
-from detector import Severity
+import boolean_extractor
+import cbr_project.proxy.app as proxy_app
+import cbr_project.proxy.config as config
+import cbr_project.proxy.detector as detector
+import cbr_project.proxy.detectors as detectors
+import cbr_project.proxy.reputation as reputation
+import db_dumper
+from cbr_project.proxy.detector import Severity
 
 BACKEND = "http://backend.test:5000"
 
@@ -125,7 +130,7 @@ def test_extract_inputs_covers_all_locations():
 def flag_marker(monkeypatch):
     """Fake detector: flags any value containing MARKER as malicious."""
     monkeypatch.setattr(
-        detector, "check_value",
+        detectors, "check_value",
         lambda v: (Severity.MALICIOUS, "marker") if "MARKER" in v else (Severity.CLEAN, ""),
     )
 
@@ -164,17 +169,17 @@ def test_suspicious_value_is_forwarded(backend, client):
     resp = client.get("/search?q=select")
     assert resp.status_code == 200
     assert len(backend.calls) == 1
-    assert detector.check_value("select")[0] == Severity.SUSPICIOUS
-    assert detector.check_value("1' OR '1'='1")[0] == Severity.MALICIOUS
-    assert detector.check_value("alice@example.com")[0] == Severity.CLEAN
+    assert detectors.check_value("select")[0] == Severity.SUSPICIOUS
+    assert detectors.check_value("1' OR '1'='1")[0] == Severity.MALICIOUS
+    assert detectors.check_value("alice@example.com")[0] == Severity.CLEAN
 
 
 # ---- reputation / throttling -------------------------------------------------
 
 def test_score_decays_by_half_life():
     now = {"t": 1000.0}
-    rep = reputation.Reputation(half_life=60, throttle_at=10, ban_at=25,
-                                max_delay=5, ban_cooldown=30, clock=lambda: now["t"])
+    rep = reputation.ReputationTable(half_life=60, throttle_at=10, ban_at=25,
+                                     max_delay=5, ban_cooldown=30, clock=lambda: now["t"])
     rep.penalise("1.2.3.4", 8.0)
     assert rep.score("1.2.3.4") == 8.0
     now["t"] += 60
@@ -184,8 +189,8 @@ def test_score_decays_by_half_life():
 
 
 def test_classify_tiers():
-    rep = reputation.Reputation(half_life=60, throttle_at=10, ban_at=20,
-                                max_delay=4, ban_cooldown=30)
+    rep = reputation.ReputationTable(half_life=60, throttle_at=10, ban_at=20,
+                                     max_delay=4, ban_cooldown=30)
     assert rep.classify(5) == (reputation.PASS, 0.0)
     action, delay = rep.classify(15)
     assert action == reputation.DELAY and abs(delay - 2.0) < 1e-9
@@ -202,7 +207,7 @@ def test_blocked_malicious_still_scores(backend, client, flag_marker, monkeypatc
 def test_suspicious_traffic_is_tarpitted_then_banned(backend, client, monkeypatch):
     monkeypatch.setattr(config, "BLOCK_MODE", "block")
     monkeypatch.setattr(
-        detector, "check_value",
+        detectors, "check_value",
         lambda v: (Severity.SUSPICIOUS, "probe") if "PROBE" in v else (Severity.CLEAN, ""),
     )
     monkeypatch.setitem(proxy_app.SCORE_DELTA, Severity.SUSPICIOUS, 3.0)
@@ -225,7 +230,7 @@ def test_suspicious_traffic_is_tarpitted_then_banned(backend, client, monkeypatc
 
 def test_ban_response_has_retry_after(backend, client, monkeypatch):
     monkeypatch.setattr(config, "BLOCK_MODE", "block")
-    monkeypatch.setattr(detector, "check_value", lambda v: (Severity.SUSPICIOUS, "p"))
+    monkeypatch.setattr(detectors, "check_value", lambda v: (Severity.SUSPICIOUS, "p"))
     monkeypatch.setattr(proxy_app.rep, "throttle_at", 0)
     monkeypatch.setattr(proxy_app.rep, "ban_at", 0)
     monkeypatch.setattr(proxy_app.rep, "ban_cooldown", 30)
@@ -233,3 +238,109 @@ def test_ban_response_has_retry_after(backend, client, monkeypatch):
     resp = client.get("/anything")
     assert resp.status_code == 429
     assert resp.headers["Retry-After"] == "30"
+
+
+# ---- boolean-blind extractor (cbr_project/boolean) ---------------------------
+
+@pytest.fixture
+def extractor_payloads(monkeypatch):
+    """Injection payloads the real db_dumper / boolean_extractor send.
+
+    db_dumper is run against a canned oracle to learn its queries (tables,
+    columns, count, a row); each query is then fed through boolean_extractor to
+    capture the length and character probes it would put on the wire.
+    """
+    prefix = "http://target.test/restaurant?id="
+    args = db_dumper.build_parser().parse_args(["-u", prefix + "{payload}"])
+
+    queries = []
+
+    def fake_run_query(query, args, show_result=True):
+        queries.append(query)
+        if "sqlite_master" in query:
+            return "users"
+        if "pragma_table_info" in query:
+            return "id~email"
+        if "COUNT(" in query:
+            return "1"
+        return "1|a@b.c"
+
+    monkeypatch.setattr(db_dumper, "run_query", fake_run_query)
+    db_dumper.enumerate_tables(args)
+    db_dumper.enumerate_columns(args, "users")
+    db_dumper.dump_table(args, "users", ["id", "email"])
+
+    payloads = []
+
+    def fake_send(url, method, data, headers, cookies, timeout):
+        payloads.append(url.removeprefix(prefix))
+        return types.SimpleNamespace(status_code=200, text="")
+
+    monkeypatch.setattr(boolean_extractor, "send_request", fake_send)
+    for query in queries:
+        boolean_extractor.get_length(query, args)
+        boolean_extractor.extract_char(query, 3, args)
+    return payloads
+
+
+def forwarded(backend, payloads, send):
+    """The payloads that reached the backend, each sent with a fresh reputation."""
+    through = []
+    for payload in payloads:
+        proxy_app.rep.reset()
+        backend.calls.clear()
+        send(payload)
+        if backend.calls:
+            through.append(payload)
+    return through
+
+
+# Both attack tests fail today: the extractor's traffic is only rated suspicious.
+# strict=True makes them fail loudly once it is blocked, as the cue to drop the mark.
+still_open = pytest.mark.xfail(strict=True, reason="boolean extraction is not blocked yet")
+
+
+def test_extractor_payloads_cover_every_probe_shape(extractor_payloads):
+    assert len(extractor_payloads) > 40
+    assert any("LENGTH((" in p for p in extractor_payloads)
+    assert any("UNICODE(SUBSTR((" in p for p in extractor_payloads)
+    assert any("sqlite_master" in p for p in extractor_payloads)
+    assert any("pragma_table_info" in p for p in extractor_payloads)
+    assert any("LIMIT 1 OFFSET" in p for p in extractor_payloads)
+
+
+@still_open
+def test_restaurant_id_extraction_is_blocked(backend, client, extractor_payloads):
+    send = lambda p: client.get("/restaurant", params={"id": p})
+    assert forwarded(backend, extractor_payloads, send) == []
+
+
+@still_open
+def test_order_lookup_extraction_is_blocked(backend, client, extractor_payloads):
+    send = lambda p: client.post("/order/lookup", data={"order_id": p})
+    assert forwarded(backend, extractor_payloads, send) == []
+
+
+EVASIONS = [
+    "1 AND 0x31=0x31",
+    "1 AND CASE WHEN (1=1) THEN 1 ELSE 0 END",
+    "1 AND (SELECT COUNT(*) FROM users)>0",
+    "1/**/AND/**/(SELECT/**/1)=1",
+    "1\tAnD\t(SeLeCt\t1)=1",
+    "1 AND (SELECT email FROM users LIMIT 1) LIKE 'a%'",
+    "1 AND ASCII(SUBSTR((SELECT password FROM users LIMIT 1),1,1))>64",
+    "1 OR 'a'='a'",
+]
+
+
+@still_open
+@pytest.mark.parametrize("payload", EVASIONS)
+def test_numeric_context_evasions_are_blocked(backend, client, payload):
+    client.get("/restaurant", params={"id": payload})
+    assert backend.calls == []
+
+
+def test_plain_numeric_ids_pass(backend, client):
+    assert client.get("/restaurant", params={"id": "2"}).status_code == 200
+    assert client.post("/order/lookup", data={"order_id": "17"}).status_code == 200
+    assert len(backend.calls) == 2
