@@ -1,5 +1,5 @@
 """Stand-in backend for developing filters: logs every request that reaches it and echoes it back as JSON.
-This is AI-generated and its only ment to be used for debugging and testing. 
+This is AI-generated and its only ment to be used for debugging and testing.
 """
 
 import logging

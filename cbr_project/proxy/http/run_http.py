@@ -73,9 +73,14 @@ def main():
     bad = 0
     for i, (title, method, url, headers, body) in enumerate(reqs, 1):
         try:
-            resp = httpx.request(method, url, headers=headers,
-                                 content=body.encode() if body else None,
-                                 follow_redirects=False, timeout=10)
+            resp = httpx.request(
+                method,
+                url,
+                headers=headers,
+                content=body.encode() if body else None,
+                follow_redirects=False,
+                timeout=10,
+            )
             code = resp.status_code
         except httpx.HTTPError as exc:
             print(f"  {i:2}. ERR  {method} {url}  ({exc})")
@@ -86,7 +91,7 @@ def main():
         if not ok:
             bad += 1
         flag = "    " if ok else " !! "
-        print(f"{flag}{i:2}. {code} {method} {url.split('://',1)[-1]}  {title}")
+        print(f"{flag}{i:2}. {code} {method} {url.split('://', 1)[-1]}  {title}")
 
     total = len(reqs)
     if expect:

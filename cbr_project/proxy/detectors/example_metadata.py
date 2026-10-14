@@ -4,11 +4,11 @@ from . import Severity
 
 _RECON_TOKENS = (
     "information_schema",  # standard SQL catalog (MySQL/Postgres/MSSQL)
-    "sqlite_master",       # SQLite catalog (this app's backend)
-    "pg_catalog",          # PostgreSQL catalog
-    "@@version",           # MySQL/MSSQL version global
-    "version()",           # MySQL/Postgres version function
-    "database()",          # MySQL current-database function
+    "sqlite_master",  # SQLite catalog (this app's backend)
+    "pg_catalog",  # PostgreSQL catalog
+    "@@version",  # MySQL/MSSQL version global
+    "version()",  # MySQL/Postgres version function
+    "database()",  # MySQL current-database function
 )
 
 

@@ -14,7 +14,7 @@ def _quote_then_comment(value):
     """A single quote followed (after any spaces) by -- or # — a classic bypass."""
     i = value.find("'")
     while i != -1:
-        rest = value[i + 1:].lstrip()
+        rest = value[i + 1 :].lstrip()
         if rest.startswith("--") or rest.startswith("#"):
             return True
         i = value.find("'", i + 1)
@@ -25,10 +25,10 @@ def _quoted_tautology(low):
     """A quote, then OR/AND, then a digit: ' OR 1   /   ' OR '1."""
     i = low.find("'")
     while i != -1:
-        rest = low[i + 1:].lstrip()
+        rest = low[i + 1 :].lstrip()
         for keyword in ("or", "and"):
             if rest.startswith(keyword):
-                after = _lstrip_quote(rest[len(keyword):].lstrip())
+                after = _lstrip_quote(rest[len(keyword) :].lstrip())
                 if after[:1].isdigit():
                     return True
         i = low.find("'", i + 1)
@@ -38,10 +38,10 @@ def _quoted_tautology(low):
 def _digits_equal_digits(text):
     """True if `text` starts with  <digits> = <digits>  (spaces allowed)."""
     rest = text.lstrip()
-    digits = rest[:len(rest) - len(rest.lstrip("0123456789"))]
+    digits = rest[: len(rest) - len(rest.lstrip("0123456789"))]
     if not digits:
         return False
-    rest = rest[len(digits):].lstrip()
+    rest = rest[len(digits) :].lstrip()
     if not rest.startswith("="):
         return False
     rest = rest[1:].lstrip()
@@ -54,9 +54,10 @@ def _bare_equality(low):
         i = low.find(keyword)
         while i != -1:
             before = low[i - 1] if i > 0 else ""
-            after = low[i + len(keyword):]
+            after = low[i + len(keyword) :]
             standalone = not (before.isalnum() or before == "_") and not (
-                after[:1].isalnum() or after[:1] == "_")
+                after[:1].isalnum() or after[:1] == "_"
+            )
             if standalone and _digits_equal_digits(after):
                 return True
             i = low.find(keyword, i + 1)
@@ -73,10 +74,10 @@ def _stacked_write(low):
     """A ';' followed (after any spaces) by DROP / DELETE / INSERT / UPDATE."""
     i = low.find(";")
     while i != -1:
-        rest = low[i + 1:].lstrip()
+        rest = low[i + 1 :].lstrip()
         for keyword in _WRITES:
             if rest.startswith(keyword):
-                nxt = rest[len(keyword):][:1]
+                nxt = rest[len(keyword) :][:1]
                 if not (nxt.isalnum() or nxt == "_"):  # whole word
                     return True
         i = low.find(";", i + 1)

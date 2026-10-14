@@ -13,9 +13,10 @@ DELAY: Action = "delay"
 BAN: Action = "ban"
 
 # https://registry.khronos.org/OpenGL-Refpages/es3/html/smoothstep.xhtml
-smoothstep = lambda edge0, edge1, x: (
-    lambda t: t * t * (3.0 - 2.0 * t)
-)(max(0.0, min(1.0, (x - edge0) / (edge1 - edge0))))
+smoothstep = lambda edge0, edge1, x: (lambda t: t * t * (3.0 - 2.0 * t))(
+    max(0.0, min(1.0, (x - edge0) / (edge1 - edge0)))
+)
+
 
 class ReputationTable:
     def __init__(
@@ -72,7 +73,7 @@ class ReputationTable:
         now = self._clock()
         with self._lock:
             score = self._decayed(ip, now) + amount
-            self._scores[ip] = (score, now) # Update the score and last_seen timestamp
+            self._scores[ip] = (score, now)  # Update the score and last_seen timestamp
             if len(self._scores) > self.soft_prune_at:
                 self._prune(now)
             return score

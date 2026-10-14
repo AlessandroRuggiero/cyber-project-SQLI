@@ -4,10 +4,10 @@ from . import Severity
 
 # Pause/benchmark primitives across SQLite, MySQL, Postgres, MSSQL, Oracle.
 _SLEEP_CALLS = (
-    "sleep(",                   # MySQL / generic
-    "pg_sleep",                 # PostgreSQL
-    "benchmark(",               # MySQL CPU burn
-    "waitfor delay",            # MSSQL
+    "sleep(",  # MySQL / generic
+    "pg_sleep",  # PostgreSQL
+    "benchmark(",  # MySQL CPU burn
+    "waitfor delay",  # MSSQL
     "dbms_pipe.receive_message",  # Oracle
 )
 

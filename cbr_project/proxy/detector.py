@@ -17,10 +17,10 @@ INSPECTED_HEADERS = ("User-Agent", "Referer", "X-Forwarded-For")
 @dataclass
 class Finding:
     location: Location
-    name: str      # parameter / cookie / header name ("" for path and raw body)
-    value: str          # the offending value as received
+    name: str  # parameter / cookie / header name ("" for path and raw body)
+    value: str  # the offending value as received
     severity: Severity  # Severity.SUSPICIOUS or Severity.MALICIOUS
-    reason: str         # why check_value() flagged it
+    reason: str  # why check_value() flagged it
 
 
 # Path style follows JSONPath's dot/bracket addressing (IETF draft-ietf-jsonpath-base-05): a.b[0].

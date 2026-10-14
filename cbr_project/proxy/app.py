@@ -20,8 +20,15 @@ log = logging.getLogger("proxy")
 
 # Headers that only make sense for a single connection and must not be forwarded.
 HOP_BY_HOP: set[str] = {
-    "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
-    "proxy-connection", "te", "trailer", "transfer-encoding", "upgrade",
+    "connection",
+    "keep-alive",
+    "proxy-authenticate",
+    "proxy-authorization",
+    "proxy-connection",
+    "te",
+    "trailer",
+    "transfer-encoding",
+    "upgrade",
 }
 # Recomputed for the new message, so never copied over. Content-Encoding is
 # dropped because httpx already decompresses the body it hands us.
@@ -110,7 +117,7 @@ def _relay_response(request: Request, upstream: httpx.Response) -> Response:
         if name.lower() in RESPONSE_SKIP:
             continue
         if name.lower() == "location" and value.startswith(config.BACKEND_URL):
-            value = base + value[len(config.BACKEND_URL):]
+            value = base + value[len(config.BACKEND_URL) :]
         raw.append((name.encode("latin-1"), value.encode("latin-1")))
     response.raw_headers = raw
     return response
@@ -120,7 +127,7 @@ def _relay_response(request: Request, upstream: httpx.Response) -> Response:
 async def proxy(path: str, request: Request) -> Response:
     ip = request.client.host if request.client else "unknown"
     query = ("?" + request.url.query) if request.url.query else ""
-    here = f"{request.method} {request.url.path}{query}"
+    request_line = f"{request.method} {request.url.path}{query}"
 
     body = await request.body()
     findings = detector.inspect(_collect_inputs(request, body))
@@ -133,32 +140,35 @@ async def proxy(path: str, request: Request) -> Response:
     # Monitor mode never interferes: it only observes and scores.
     if config.BLOCK_MODE == "monitor":
         if result != Severity.CLEAN or action != reputation.PASS:
-            log.info("%s -> MONITOR (%s, score %.1f, would %s)", here, result, score, action)
+            log.info(
+                "%s -> MONITOR (%s, score %.1f, would %s)", request_line, result, score, action
+            )
     else:
         if result == Severity.MALICIOUS:
-            log.info("%s -> BLOCKED (score %.1f)", here, score)
+            log.info("%s -> BLOCKED (score %.1f)", request_line, score)
             return _blocked_response()
         if action == reputation.BAN:
-            log.info("%s -> BANNED (score %.1f, retry after %ds)", here, score, seconds)
+            log.info("%s -> BANNED (score %.1f, retry after %ds)", request_line, score, seconds)
             return _throttled_response(seconds)
         if action == reputation.DELAY and seconds > 0:
-            log.info("%s -> THROTTLED (score %.1f, delay %.1fs)", here, score, seconds)
+            log.info("%s -> THROTTLED (score %.1f, delay %.1fs)", request_line, score, seconds)
             await asyncio.sleep(seconds)  # frees the event loop, holds no thread
 
     target = config.BACKEND_URL + request.url.path + query
     try:
         upstream = await client.request(
-            request.method, target,
+            request.method,
+            target,
             headers=_forward_headers(request, ip),
             content=body,
             follow_redirects=False,
         )
     except httpx.RequestError as exc:
-        log.error("%s -> backend error: %s", here, exc)
+        log.error("%s -> backend error: %s", request_line, exc)
         return Response("<h1>502 Bad Gateway</h1>", status_code=502, media_type="text/html")
 
     note = "forwarded" if result == Severity.CLEAN else f"forwarded ({result}, score {score:.1f})"
-    log.info("%s -> %s (%d)", here, note, upstream.status_code)
+    log.info("%s -> %s (%d)", request_line, note, upstream.status_code)
     return _relay_response(request, upstream)
 
 
@@ -169,13 +179,22 @@ def _blocked_response() -> Response:
 
 def _throttled_response(retry_after: float) -> Response:
     body = "<h1>429 Too Many Requests</h1><p>This client is temporarily throttled.</p>"
-    return Response(body, status_code=429, media_type="text/html",
-                    headers={"Retry-After": str(int(retry_after))})
+    return Response(
+        body,
+        status_code=429,
+        media_type="text/html",
+        headers={"Retry-After": str(int(retry_after))},
+    )
 
 
 if __name__ == "__main__":
     import uvicorn
 
-    log.info("Proxying http://%s:%d -> %s (mode: %s)",
-             config.PROXY_HOST, config.PROXY_PORT, config.BACKEND_URL, config.BLOCK_MODE)
+    log.info(
+        "Proxying http://%s:%d -> %s (mode: %s)",
+        config.PROXY_HOST,
+        config.PROXY_PORT,
+        config.BACKEND_URL,
+        config.BLOCK_MODE,
+    )
     uvicorn.run(app, host=config.PROXY_HOST, port=config.PROXY_PORT)
