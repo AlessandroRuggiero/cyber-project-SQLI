@@ -14,11 +14,17 @@ import re
 from . import Severity, util
 
 
+def contains_suspicious_sql_keyword(input: str) -> bool:
+    return (
+        re.search(r"select|union|insert|update|delete|drop|sqlite_|information_schema", input)
+    ) is not None
+
+
 # matches sqlite statements that can be used to obfuscate other values
 def sqlite_char_etc(input: str) -> bool:
     return (
         re.search(
-            r"(char|hex|unhex|substr|substring|quote|unicode|printf|format|replace)\((\S+,?)+[)$]?",
+            r"\b(char|hex|unhex|substr|substring|quote|unicode|printf|format|replace|length|count|group_concat|coalesce|randomblob|cast|ifnull|instr|typeof)\((\S+,?)+[)$]?",
             input,
         )
         is not None
@@ -38,16 +44,19 @@ def special_character_count(input: str) -> bool:
     return suspicion_sum > 10
 
 
-# matches "and" or "or" followed by a tautology, x =/like/is x
+# matches "and" or "or" followed by a simple tautology, x =/like/is x
 def tautology(input: str) -> bool:
-    return re.search(r"\b(?:and|or)\b\s*([\S']{1,40})\s*\b(=|like|is)\b\s*\1", input) is not None
+    return (
+        re.search(r"\b(?:and|or)\b\s*'?([\S']+)'?\s*([=!]+|\blike\b|\bis\b)\s*'?\1'?", input)
+        is not None
+    )
 
 
 # matches "and", "or", "having", followed by a comparison
 def boolean_comparison(input: str) -> bool:
     return (
         re.search(
-            r"\b(?:and|or(\s+not)*|having)\b[\s\(]*\S+\s*((not)*\s+like|=|<|>|<>|!=|>=|<=)\s*\S+",
+            r"\b(and|or|having)\b[\S\s]*?((not\s+)*\b(like|is|in|glob|match|between)\b|[=<>!]+)",
             input,
         )
         is not None
@@ -56,12 +65,12 @@ def boolean_comparison(input: str) -> bool:
 
 # matches union select or variant
 def union_select(input: str) -> bool:
-    return re.search(r"\b(union\b( all\b)? select)\b", input) is not None
+    return re.search(r"\b(union\b(\s(all|distinct)\b)?\sselect)\b", input) is not None
 
 
 # matches case when statement
 def case_when(input: str) -> bool:
-    return re.search(r"(case)\b[\s\S](when)", input) is not None
+    return re.search(r"\b(case)\b[\s\S](when)\b", input) is not None
 
 
 # matches extension load, should probably always block this one
@@ -85,6 +94,10 @@ def apply_rules(input: str) -> tuple[Severity, str]:
         message += "contains sqlite comments "
     if removed_whitespace > 10:  # idk how much this matters
         suspicion = suspicion + 1
+
+    if contains_suspicious_sql_keyword(input):
+        suspicion = suspicion + 2
+        message += "contains one or more suspicious sql keywords "
 
     if special_character_count(input):
         suspicion = suspicion + 2

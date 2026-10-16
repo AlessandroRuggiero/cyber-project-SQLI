@@ -8,7 +8,7 @@ import re
 # sqlite treats comments as whitespace
 # https://www.sqlite.org/lang_comment.html
 def remove_comments(input: str) -> tuple[str, int]:
-    return re.subn(r"(\/\*[\s\S]+?\*\/)|(--.+\n?)", " ", input)
+    return re.subn(r"(\/\*[\s\S]*?\*\/)|(--.+\n?)", " ", input)
 
 
 # sqlite treats any whitespace the same

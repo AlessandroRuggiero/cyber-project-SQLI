@@ -42,4 +42,4 @@ HARD_PRUNE_TARGET = int(os.environ.get("HARD_PRUNE_TARGET", "7500"))
 
 # ---- Schema Enforcing --------------------------------------------------------
 # Validate known fields of incoming requests against expected shape
-SCHEMA_CONSTRAINT = False
+SCHEMA_CONSTRAINT = True
