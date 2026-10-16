@@ -14,6 +14,7 @@ import cbr_project.proxy.config as config
 import cbr_project.proxy.detector as detector
 import cbr_project.proxy.reputation as reputation
 from cbr_project.proxy.detector import Severity
+import  cbr_project.proxy.schema_constraint as schema_constraint
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("proxy")
@@ -130,12 +131,16 @@ async def proxy(path: str, request: Request) -> Response:
     request_line = f"{request.method} {request.url.path}{query}"
 
     body = await request.body()
-    findings = detector.inspect(_collect_inputs(request, body))
+    inputs = _collect_inputs(request, body)
+    findings = detector.inspect(inputs)
     for f in findings:
         log.warning("%s in %s %r: %r (%s)", f.severity, f.location, f.name, f.value, f.reason)
 
     result = detector.verdict(findings)
     score, action, seconds = rep.assess(ip, SCORE_DELTA[result])
+
+    if not schema_constraint.follows_schema(inputs):
+        return _blocked_response() # needs actual integration into the code
 
     # Monitor mode never interferes: it only observes and scores.
     if config.BLOCK_MODE == "monitor":
@@ -143,6 +148,14 @@ async def proxy(path: str, request: Request) -> Response:
             log.info(
                 "%s -> MONITOR (%s, score %.1f, would %s)", request_line, result, score, action
             )
+    # For more quickly testing brute force without banning/throttling; sqlmap command wants 403
+    elif config.BLOCK_MODE == "no_ban":
+        if result != Severity.CLEAN or action != reputation.PASS:
+            log.info(
+                "%s -> MONITOR (%s, score %.1f, would %s)", request_line, result, score, action
+            )
+            if result == Severity.MALICIOUS:
+                return _blocked_response()
     else:
         if result == Severity.MALICIOUS:
             log.info("%s -> BLOCKED (score %.1f)", request_line, score)
