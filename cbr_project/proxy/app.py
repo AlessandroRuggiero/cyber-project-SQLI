@@ -139,8 +139,8 @@ async def proxy(path: str, request: Request) -> Response:
     result = detector.verdict(findings)
     score, action, seconds = rep.assess(ip, SCORE_DELTA[result])
 
-    if not schema_constraint.follows_schema(inputs):
-        return _blocked_response() # needs actual integration into the code
+
+
 
     # Monitor mode never interferes: it only observes and scores.
     if config.BLOCK_MODE == "monitor":
@@ -148,15 +148,25 @@ async def proxy(path: str, request: Request) -> Response:
             log.info(
                 "%s -> MONITOR (%s, score %.1f, would %s)", request_line, result, score, action
             )
-    # For more quickly testing brute force without banning/throttling; sqlmap command wants 403
+    # Monitor mode but for more quickly testing brute force without banning/throttling; sqlmap command wants 403
     elif config.BLOCK_MODE == "no_ban":
         if result != Severity.CLEAN or action != reputation.PASS:
             log.info(
-                "%s -> MONITOR (%s, score %.1f, would %s)", request_line, result, score, action
+                "%s -> BLOCKED (%s, score %.1f, would %s)", request_line, result, score, action
             )
             if result == Severity.MALICIOUS:
                 return _blocked_response()
+        if config.SCHEMA_CONSTRAINT and not schema_constraint.follows_schema(inputs)[0]:
+            log.info(
+                "%s -> BLOCKED (%s, score %.1f, would %s)", request_line, Severity.MALICIOUS, score, action
+            )
+            return _blocked_response()
     else:
+        if config.SCHEMA_CONSTRAINT and not schema_constraint.follows_schema(inputs)[0]:
+            log.info(
+                "%s -> BLOCKED (%s, score %.1f, would %s)", request_line, Severity.MALICIOUS, score, action
+            )
+            return _blocked_response()
         if result == Severity.MALICIOUS:
             log.info("%s -> BLOCKED (score %.1f)", request_line, score)
             return _blocked_response()

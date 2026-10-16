@@ -41,16 +41,13 @@ def is_valid_email(value: str) -> bool:
 
 
 # Clumsy implementation, could be better in so many ways
-def follows_schema(inputs: list[tuple[Location, str, str]]) -> bool:
+def follows_schema(inputs: list[tuple[Location, str, str]]) -> tuple[bool, Location, str]:
     for x in inputs:
-        if x[0] == "form":
-            if x[1] == "id":
-                if not is_valid_id(x[2]):
-                    return False
-            elif x[1] == "email":
-                if not is_valid_email(x[2]):
-                    return False
-            elif x[1] == "name":
-                if not is_valid_name(x[2]):
-                    return False
-    return True
+        if x[0] in ['form', 'query', 'json']:
+            if x[1] == "id" and not is_valid_id(x[2]):
+                return (False, 'form', "Invalid id")
+            elif x[1] == "email" and not is_valid_email(x[2]):
+                return (False, 'form', "Invalid email")
+            elif x[1] == "name" and not is_valid_name(x[2]):
+                return (False, 'form', "Invalid name")
+    return (True, 'form', '')

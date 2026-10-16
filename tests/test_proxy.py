@@ -55,14 +55,14 @@ def reset_reputation():
 
 
 def test_forwards_method_path_query_and_body(backend, client):
-    resp = client.post("/login?next=%2Fcart", data={"email": "alice", "password": "pw"})
+    resp = client.post("/login?next=%2Fcart", data={"email": "alice@example.com", "password": "pw"})
 
     assert resp.status_code == 200
     assert resp.content == b"ok"
     call = backend.calls[0]
     assert call["method"] == "POST"
     assert call["url"] == BACKEND + "/login?next=%2Fcart"
-    assert call["content"] == b"email=alice&password=pw"
+    assert call["content"] == b"email=alice%40example.com&password=pw"
     assert call["follow_redirects"] is False
 
 
@@ -138,7 +138,7 @@ def flag_marker(monkeypatch):
 def test_block_mode_blocks_flagged_request(backend, client, flag_marker, monkeypatch):
     monkeypatch.setattr(config, "BLOCK_MODE", "block")
 
-    resp = client.post("/login", data={"email": "x", "password": "MARKER"})
+    resp = client.post("/login", data={"email": "x@example.com", "password": "MARKER"})
 
     assert resp.status_code == 403
     assert backend.calls == []
@@ -147,15 +147,15 @@ def test_block_mode_blocks_flagged_request(backend, client, flag_marker, monkeyp
 def test_monitor_mode_forwards_flagged_request(backend, client, flag_marker, monkeypatch):
     monkeypatch.setattr(config, "BLOCK_MODE", "monitor")
 
-    resp = client.post("/login", data={"email": "x", "password": "MARKER"})
+    resp = client.post("/login", data={"email": "x@example.com", "password": "MARKER"})
 
     assert resp.status_code == 200
     assert len(backend.calls) == 1
-    assert backend.calls[0]["content"] == b"email=x&password=MARKER"
+    assert backend.calls[0]["content"] == b"email=x%40example.com&password=MARKER"
 
 
 def test_tautology_is_blocked(backend, client):
-    resp = client.post("/login", data={"email": "a", "password": "1' OR '1' = '1"})
+    resp = client.post("/login", data={"email": "alice@example.com", "password": "1' OR '1' = '1"})
     assert resp.status_code == 403
     assert backend.calls == []
 
@@ -200,7 +200,7 @@ def test_classify_tiers():
 def test_blocked_malicious_still_scores(backend, client, flag_marker, monkeypatch):
     monkeypatch.setattr(config, "BLOCK_MODE", "block")
     before = proxy_app.rep.score("testclient")
-    client.post("/login", data={"email": "x", "password": "MARKER"})
+    client.post("/login", data={"email": "x@example.com", "password": "MARKER"})
     assert proxy_app.rep.score("testclient") > before
 
 
@@ -295,11 +295,6 @@ def forwarded(backend, payloads, send):
     return through
 
 
-# Both attack tests fail today: the extractor's traffic is only rated suspicious.
-# strict=True makes them fail loudly once it is blocked, as the cue to drop the mark.
-still_open = pytest.mark.xfail(strict=True, reason="boolean extraction is not blocked yet")
-
-
 def test_extractor_payloads_cover_every_probe_shape(extractor_payloads):
     assert len(extractor_payloads) > 40
     assert any("LENGTH((" in p for p in extractor_payloads)
@@ -309,13 +304,11 @@ def test_extractor_payloads_cover_every_probe_shape(extractor_payloads):
     assert any("LIMIT 1 OFFSET" in p for p in extractor_payloads)
 
 
-@still_open
 def test_restaurant_id_extraction_is_blocked(backend, client, extractor_payloads):
     send = lambda p: client.get("/restaurant", params={"id": p})
     assert forwarded(backend, extractor_payloads, send) == []
 
 
-@still_open
 def test_order_lookup_extraction_is_blocked(backend, client, extractor_payloads):
     send = lambda p: client.post("/order/lookup", data={"order_id": p})
     assert forwarded(backend, extractor_payloads, send) == []
@@ -333,7 +326,6 @@ EVASIONS = [
 ]
 
 
-@still_open
 @pytest.mark.parametrize("payload", EVASIONS)
 def test_numeric_context_evasions_are_blocked(backend, client, payload):
     client.get("/restaurant", params={"id": payload})
