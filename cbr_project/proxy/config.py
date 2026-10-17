@@ -38,3 +38,8 @@ DROP_BELOW = float(os.environ.get("DROP_BELOW", "0.1"))
 SOFT_PRUNE_AT = int(os.environ.get("SOFT_PRUNE_AT", "10000"))
 HARD_PRUNE_AT = int(os.environ.get("HARD_PRUNE_AT", "12000"))
 HARD_PRUNE_TARGET = int(os.environ.get("HARD_PRUNE_TARGET", "7500"))
+
+
+# ---- Schema Enforcing --------------------------------------------------------
+# Validate known fields of incoming requests against expected shape
+SCHEMA_CONSTRAINT = True
