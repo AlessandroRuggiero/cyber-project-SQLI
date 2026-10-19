@@ -3,8 +3,8 @@ Blocks any query that doesn't fit the schema for the targeted db endpoint.
 Annoyingly, it basically requires manually annotating all api routes that send a db call, and if there are vulnerable routes without a strict format, this will not help.
 An assumption could be made that the frontend should prevent legitimate users from submitting invalid information, so any queries not matching are intentionally bypassing the frontend and therefore suspicious?
 
-Unfortunately, while most db queries follow a relatively strict format, the "password" login field is vulnerable in this backend.
-Other than possibly a max/min length, there probably shouldn't be any more restrictions to passwords for security reasons.
+Unfortunately, while most db queries here follow a relatively strict format, the "password" login field is vulnerable in this backend.
+Other than possibly a max/min length, making larger restrictions to how passwords are allowed to look is probably a bad idea for account security.
 """
 
 import re

@@ -1,5 +1,6 @@
 """
-Contains a bit of shared functionality between detectors
+Contains a bit of potentially shared functionality between detectors
+(currently only used in regex_rules.py though)
 """
 
 import re
