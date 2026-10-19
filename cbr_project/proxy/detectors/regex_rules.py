@@ -1,5 +1,5 @@
 """
-A detector containing more rules and looped normalization in addition to the naive keyword list
+A detector containing regex rules for blocking injection attempts, overly paranoid and many false positives.
 Scoped to sqlite specifically, currently blocks all attempts by sqlmap at --level=5 --risk=3
 Sources:
     https://www.sqlite.org/datatype3.html

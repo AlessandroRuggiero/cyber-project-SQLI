@@ -1,7 +1,7 @@
 """
 A more complex detector using tokeniziation to try to identify SQL syntax.
-Libinjection is an existing library for SQLi detection that tokenizes the query and matches the tokens it to a database of "fingerprints", known injection patterns.
-It leans toward prioritizing a low rate of false positives (especially compared to our attempts here), which means any matches are very likely injection attempts, but there's a risk of missing subtler attempts.
+Libinjection is an existing library for SQLi detection that tokenizes the query and tries to match the tokens to a database of "fingerprints", known injection patterns.
+It leans toward prioritizing a low rate of false positives (especially compared to the regex_rules.py detector here), which means any matches are very likely injection attempts, but there's a risk of missing subtler attempts.
 """
 
 import libinjection
