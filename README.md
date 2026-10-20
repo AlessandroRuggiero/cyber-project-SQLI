@@ -15,30 +15,43 @@
 The filtering is done in the proxy, using the filters found in [regex_rules.py](cbr_project/proxy/detectors/regex_rules.py), [tokenizer.py](cbr_project/proxy/detectors/tokenizer.py), and [schema_constraint.py](cbr_project/proxy/schema_constraint.py).
 
 [regex_rules.py](cbr_project/proxy/detectors/regex_rules.py) contains the regex rule-based SQLi detection. It contains one function per filtering rule, returning true if a match is found and false if not. Every rule returning true is then summed together in `apply_rules()` via different weights per rule. If the sum is greater than a certain threshold, the `Severity.SUSPICIIOUS` result is returned. If the sum passes a higher threshold, `Severity.MALICIOUS` is returned. Currently, due to the small amount of filter functions included, the weights are set to almost always trigger a "malicious" detection by themselves. However, the weights and thresholds can be adjusted to create a more fine-grained filter.
+
 Strengths:
 - Adaptable to any type of input passed on to the database
 - Larger, more detailed rule sets can lead to a relatively high accuracy of identifying injection attempts
+
 Weaknesses:
 - Writing the perfect set of regexes to identify all forms of SQL injection is a very difficult problem, as one can often by accident either over or undershoot the target effect when working with complex regexes
 - Without a very large set of well-tuned rules, it suffers both a large risk of evasion tactics slipping through and a large rate of false positives, balanced by the level of "paranoia" in the rules and their weights (how wide the rules are and easily they trigger a detection)
-Evaluation:
-This filter currently blocks all injection attempts by sqlmap except some used for probing (see testing section for the particular command used). However, bypassing it is still very doable and there is a large amount of potential false positives.
 
+Evaluation:
+The regex rules filter currently blocks all injection attempts by sqlmap except some used for probing (see testing section for the particular command used). However, bypassing it is still very doable and there is a large amount of potential false positives.
+\
+\
+\
 [schema_constraint.py](cbr_project/proxy/schema_constraint.py) contains functions each corresponding to a particular input type featured in the project backend, and `follows_schema()` which selects the correct function to validate a particular parameter in the request based on its type.
+
 Strengths:
 - Very good accuracy; generally produces no false positives or negatives as every relevant input for this filter follows a strict format and can be relatively easily targeted with regex
+
 Weaknesses:
 - Doesn't work for all types of user input; in this project the website has a `password` parameter vulnerable which is hard/inadvisable to constrain without harming account security
 - As the allowed type of input widens, the regexes required to successfully filter SQLi approaches the general regex rule case
-Evaluation:
-Seems to perfectly block attempts at protected endpoints, but does nothing when the input isn't of a particularly constrained format.
 
+Evaluation:
+The schema constraint filter seems to perfectly block attempts at protected endpoints, but does nothing when the input isn't of a particularly constrainable format.
+\
+\
+\
 [tokenizer.py](cbr_project/proxy/detectors/tokenizer.py) contains only the plumbing to implement `libinjection` detection. It works by tokenizing the input and comparing the produced set of tokens to a database of fingerprints.
+
 Strengths:
 - Few false positives as the token fingerprint approach used leads to very specific patterns to match potential injection attempts against
+
 Weaknesses:
 - Some amount of false negatives, it prioritizes accuracy over catching every attempt
 - Can be defeated by padding inputs, as the fingerprints are built from up to a maximum of 5 tokens
+
 Evaluation:
 Blocks most attempts from sqlmap, notably missing a few SQLite-specific injections.
 ## Testing documentation
@@ -65,7 +78,7 @@ BLOCK_MODE=no_ban uvicorn cbr_project.proxy.app:app --host 127.0.0.1 --port 8090
 python -m cbr_project.proxy.echo_backend
 ```
 - Both commands should be run in different terminals
-- `BLOCK-MODE=no_ban` is useful here to allow sqlmap to brute force rapidly while still communicating if requests were passed on or blocked
+- `BLOCK-MODE=no_ban` is useful here to allow sqlmap to brute force rapidly while still showing if requests were passed on or blocked
 
 3. Run tools such as curl or sqlmap to test, echo backend terminal will print any requests successfully passing the proxy
 ```bash
