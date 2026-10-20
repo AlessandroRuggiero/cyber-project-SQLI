@@ -7,26 +7,27 @@
 - [coreruleset/coreruleset (OWASP CRS for WAFs)](https://github.com/coreruleset/coreruleset)
 ### Tools/Libraries
 - [libinjection](https://github.com/client9/libinjection)
+	- [libinjection python wrapper](https://pypi.org/project/libinjection-python/)
 - [sqlmap](https://github.com/sqlmapproject/sqlmap)
 - [regex101](https://regex101.com)
 ## Project documentation
 ### Filtering
 The filtering is done in the proxy, using the filters found in [regex_rules.py](cbr_project/proxy/detectors/regex_rules.py), [tokenizer.py](cbr_project/proxy/detectors/tokenizer.py), and [schema_constraint.py](cbr_project/proxy/schema_constraint.py).
 
-[regex_rules.py](cbr_project/proxy/detectors/regex_rules.py) contains the regex rule-based SQLi detection. It contains one function per filtering rule, returning true if a match is found and false if not, which are then all summed together in `apply_rules()` via different weights per rule. If the sum is greater than a certain threshold, the `Severity.SUSPICIIOUS` result is returned. If the sum passes a higher threshold, `Severity.MALICIOUS` is returned. Currently, due to the small amount of filter functions included, the weights are set to almost always trigger a "malicious" detection by themselves. However, the weights and thresholds can be adjusted to create a more fine-grained filter.
+[regex_rules.py](cbr_project/proxy/detectors/regex_rules.py) contains the regex rule-based SQLi detection. It contains one function per filtering rule, returning true if a match is found and false if not. Every rule returning true is then summed together in `apply_rules()` via different weights per rule. If the sum is greater than a certain threshold, the `Severity.SUSPICIIOUS` result is returned. If the sum passes a higher threshold, `Severity.MALICIOUS` is returned. Currently, due to the small amount of filter functions included, the weights are set to almost always trigger a "malicious" detection by themselves. However, the weights and thresholds can be adjusted to create a more fine-grained filter.
 Strengths:
 - Adaptable to any type of input passed on to the database
 - Larger, more detailed rule sets can lead to a relatively high accuracy of identifying injection attempts
 Weaknesses:
 - Writing the perfect set of regexes to identify all forms of SQL injection is a very difficult problem, as one can often by accident either over or undershoot the target effect when working with complex regexes
-- Without a very large set of well-tuned rules, it suffers both a large risk of evasion tactics slipping through and a large rate of false positives, balanced by the level of paranoia in the rules and their weights
+- Without a very large set of well-tuned rules, it suffers both a large risk of evasion tactics slipping through and a large rate of false positives, balanced by the level of "paranoia" in the rules and their weights (how wide the rules are and easily they trigger a detection)
 
 [schema_constraint.py](cbr_project/proxy/schema_constraint.py) contains functions each corresponding to a particular input type featured in the project backend, and `follows_schema()` which selects the correct function to validate a particular parameter in the request based on its name.
 Strengths:
 - Very good accuracy; generally produces no false positives or negatives as every relevant input for this filter follows a strict format
 Weaknesses:
 - Doesn't work for all types of user input; in this project the website has a `password` parameter vulnerable which is hard/inadvisable to constrain without harming account security
-- As the input allowed gets broader, the regexes required to match them approaches the general regex rule case
+- As the allowed type of input widens, the regexes required to successfully filter SQLi approaches the general regex rule case
 
 [tokenizer.py](cbr_project/proxy/detectors/tokenizer.py) contains only the plumbing to implement `libinjection` detection. It works by tokenizing the input, and comparing the produced set of tokens to a database of fingerprints.
 Strengths:
