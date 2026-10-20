@@ -1,6 +1,21 @@
-# Cyber-project-SQLI
+# SQLi Cybersecurity Project
+
 ## Problem statement
-(problem statement)
+
+The project aims to demonstrate how SQL injections can be 
+exploited, detected and blocked in a vulnerable web application. 
+The project features a CLI tool to automatically dump a database given a blind SQLi vulnerable endpoint (boolean based extraction) and a proxy which inspects incoming requests and blocks or delays payloads that appear malicious. 
+The project therefore aims to cover both the attack and defense sides of the problem.
+
+## AI Usage Disclosure 
+
+AI was used to generate the whole website contained in `cbr_project/website`,
+to write the Dockerfiles needed to containerize the application, and to define
+the SQL database.
+
+The student written part of the project is contained in
+`cbr_project/boolean` (Bucci) and `cbr_project/proxy` (Erikers and Ruggiero).
+
 ## Reference
 - [SQLite documentation](https://www.sqlite.org/docs.html)
 - [swisskyrepo/PayloadsAllTheThings - SQLite Injection.md](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/SQL%20Injection/SQLite%20Injection.md)
@@ -10,8 +25,41 @@
 	- [libinjection python wrapper](https://pypi.org/project/libinjection-python/)
 - [sqlmap](https://github.com/sqlmapproject/sqlmap)
 - [regex101](https://regex101.com)
+
 ## Project documentation
-### Filtering
+### Website and database
+
+The Flask backend is implemented in `cbr_project/main.py`. Its templates,
+static files, schema, seed data, and database are under `cbr_project`. The
+demo accounts are:
+
+- `demo@example.com` / `demo`
+- `admin@example.com` / `admin`
+
+The training vulnerability is limited to `POST /login`. Other database
+queries use parameters; new string-built SQL queries should not be added.
+
+### Boolean SQL dumper
+
+`cbr_project/boolean/db_dumper.py` automates SQLite extraction through a
+true/false HTTP response oracle. It enumerates tables and columns, counts
+rows, and uses the shared `boolean_extractor.py` to recover query results
+character by character with binary search. Extracted tables are written as
+UTF-8 CSV files in `dump/`. The dumper supports GET and POST targets,
+custom payload templates, response-status or response-text oracles, headers,
+cookies, and timeouts. Example commands are available in
+`cbr_project/boolean/exploit.sh`.
+
+### SQLi filtering proxy
+
+The proxy is in `cbr_project/proxy` and runs in front of the backend. It
+examines values in paths, query parameters, request bodies, headers, and
+cookies. Detector results are classified as clean, suspicious, or malicious.
+In block mode, malicious requests receive `403`; suspicious traffic increases
+the client's score and can be tarpitted or eventually rejected with `429`.
+Monitor mode logs the verdict but forwards requests.
+
+### Filters
 The filtering is done in the proxy, using the filters found in [regex_rules.py](cbr_project/proxy/detectors/regex_rules.py), [tokenizer.py](cbr_project/proxy/detectors/tokenizer.py), and [schema_constraint.py](cbr_project/proxy/schema_constraint.py).
 
 [regex_rules.py](cbr_project/proxy/detectors/regex_rules.py) contains the regex rule-based SQLi detection. It contains one function per filtering rule, returning true if a match is found and false if not. Every rule returning true is then summed together in `apply_rules()` via different weights per rule. If the sum is greater than a certain threshold, the `Severity.SUSPICIIOUS` result is returned. If the sum passes a higher threshold, `Severity.MALICIOUS` is returned. Currently, due to the small amount of filter functions included, the weights are set to almost always trigger a "malicious" detection by themselves. However, the weights and thresholds can be adjusted to create a more fine-grained filter.
@@ -54,9 +102,34 @@ Weaknesses:
 
 Evaluation:
 Blocks most attempts from sqlmap, notably missing a few SQLite-specific injections.
+
+
 ## Testing documentation
+
 ### Website via docker
-(how to run the full site)
+
+```bash
+docker compose up --build
+```
+
+Open <http://127.0.0.1:8080>. Stop with `docker compose down`; add `-v` to
+recreate the database volume. To run the backend without Docker:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python3 -m cbr_project.init_db
+flask --app cbr_project.main:main run
+```
+
+The backend is then available at <http://127.0.0.1:5000>. Test proxy payloads
+and run the automated tests with:
+
+```bash
+python cbr_project/proxy/http/run_http.py cbr_project/proxy/http/attacks.http --expect 403
+pytest
+```
 ### Testing filters with the debug echo backend
 The regex and libinjection filters are toggled by commenting or uncommenting their lines in `cbr_project/proxy/detectors/__init__.py:48-68`, and the input validation/schema constraint filter can be toggled with the boolean at `cbr_project/proxy/config.py:45`.
 The `BLOCK-MODE` environment variable can be set to either `block` to block misbehaving IP addresses, `no_ban` to block individual injection attempts while not banning the clients, or `monitor` to just print received requests and what would have happened with the `block` mode.
@@ -93,8 +166,9 @@ sqlmap -u 'http://127.0.0.1:8090/login' -p password \
 ```
 - This particular sqlmap command tries SQL injection on the `password` field sent to the login endpoint, suitable for testing the non input validation-based filters (email, name and id  are protected by the input validation constraint, resulting in sqlmap not being able to do much of anything)
 - Edit the `-p` switch to change targeted field, or omit it to target all available fields.
+
 ## Individual contribution
-### Martin Erikers (erikers@kth.se)
+### Martin Erikers (`erikers@kth.se`)
 The main focus of my personal contribution is the filters used in the proxy to filter out incoming attempts at SQL injection. 
 
 The first step working on the filters was researching existing options, and trying to figure out what was reasonable to build for the project. For this reason, I selected a general regex-based filter, an input validation filter (here called "schema constraint" despite not directly interacting with the database schema), and also included an existing tokenizing heuristic-based detector ([libinjection](https://github.com/libinjection/libinjection)) for comparison.
@@ -109,4 +183,28 @@ The input validation/schema constraint filter was implemented by, based on the v
 The tokenizing detector used is a third-party library, and as such only needed a small amount plumbing for integration into the proxy.
 
 
-### etc
+### Gioele Bucci (`gioeleb@kth.se`)
+
+I have developed a CLI tool that automatically dumps each table of a database
+as a separate `.csv` file by extracting data from an endpoint vulnerable to
+boolean-based SQL injection, automating the process of dumping an SQLite database.
+The dumper first enumerates user-created tables through `sqlite_master`, then
+retrieves each table's column names using `pragma_table_info`. For every table
+it counts the rows and extracts them one at a time.
+
+The extraction is performed by the shared `boolean_extractor` module. It
+determines the length of each query result and recovers every printable
+character with binary search, minimizing the number of HTTP requests compared
+with trying every possible character sequentially. The dumper combines column values with delimiters, quotes schema-derived identifiers safely, converts SQL `NULL`
+values to a visible representation, and separates the recovered output back
+into rows and columns. Each table is saved as a separate UTF-8 CSV file in a
+`dump` directory, with sanitized filenames.
+
+The command-line interface supports both GET and POST injection points, custom
+boolean payload templates, response-status or response-text oracles, headers,
+cookies, and request timeouts. 
+The accompanying `exploit.sh` examples demonstrate a full database dump and an authenticated POST-based dump. The extraction logic is also easily expandable to support time-based extraction: the blind extraction concept remains the same, while
+the response oracle can be adapted to measure delays instead of evaluating
+true-or-false responses.
+
+The video at [cbr_project/boolean/demo_boolean.mp4](https://github.com/AlessandroRuggiero/cyber-project-SQLI/blob/main/cbr_project/boolean/demo_boolean.mp4) showcases the Boolean SQL dumper in use against the project's website.
