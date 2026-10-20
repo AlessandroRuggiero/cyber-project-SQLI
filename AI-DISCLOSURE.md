@@ -1,8 +1,10 @@
 # AI disclosure
 ## Martin Erikers (erikers@kth.se)
 No AI use.
-## name (email)
-[link to file](cbr_project/relative/link/here) - this and that was generated. Prompt: "hey generate me this and that, thanks"
+
+## Alessandro Ruggiero
+The echo backend was ai generated, the reason is just to quickly get a look at what the proxy is doing in a convenient way.
+The prompt was "I need a simple http server that will logs its request to test my proxy, just one quick file with flask, here is the file extracts the info form the request, i want all those logged " + file containing extract_inputs
 
 ## Siri, left group
 Majority AI-generated, prompts unknown, all/most files have changed since

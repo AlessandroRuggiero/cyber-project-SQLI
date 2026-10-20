@@ -47,22 +47,13 @@ def words(text):
 
 # Imported after Severity/words are defined so each detector module can do
 # `from detectors import Severity, words` without a circular-import error.
-# These are EXAMPLE detectors — templates to copy and replace with your own.
 from . import (  # noqa: E402
-    #example_obvious_injection,
-    #example_sql_tokens,
-    #example_time_based,
-    #example_metadata,
     regex_rules,
     #tokenizer,
 )
 
 # Every active detector.
 DETECTORS = (
-    #example_obvious_injection.check_value,
-    #example_sql_tokens.check_value,
-    #example_time_based.check_value,
-    #example_metadata.check_value,
     regex_rules.check_value,
     #tokenizer.check_value,
 )
