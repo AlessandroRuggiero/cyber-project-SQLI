@@ -18,7 +18,7 @@ Strengths:
 - Adaptable to any type of input passed on to the database
 - Larger, more detailed rule sets can lead to a relatively high accuracy of identifying injection attempts
 Weaknesses:
-- Writing the perfect set of regexes to identify all forms of SQL injection is a very difficult problem; one can often by accident either over or undershoot the intended effect when working with complex regexes
+- Writing the perfect set of regexes to identify all forms of SQL injection is a very difficult problem, as one can often by accident either over or undershoot the target effect when working with complex regexes
 - Without a very large set of well-tuned rules, it suffers both a large risk of evasion tactics slipping through and a large rate of false positives, balanced by the level of paranoia in the rules and their weights
 
 [schema_constraint.py](cbr_project/proxy/schema_constraint.py) contains functions each corresponding to a particular input type featured in the project backend, and `follows_schema()` which selects the correct function to validate a particular parameter in the request based on its name.
@@ -82,7 +82,7 @@ The first step working on the filters was researching existing options, and tryi
 
 I started by implementing utility functions with the purpose of simulating initial operations done on the query by SQLite to make sure the string I was writing rules against looked the same as it does to the SQLite parser. 
 
-The regex-based filter was then implemented by, at first, looking up the most common injection approaches and writing basic regexes that would catch them. Following this, I used [sqlmap](https://github.com/sqlmapproject/sqlmap) as an "adversary", running it against my filter between every update to figure out what I needed to catch next, or if I caused a regression by accident. I also looked briefly to the [OWASP core rule set](https://github.com/coreruleset/coreruleset) for inspiration, but the rules defined there generally are too fine-grained to use here as they're designed to be incredibly specific.
+The regex-based filter was then implemented by, at first, looking up the most common injection approaches and writing basic regexes that would catch them. Following this, I used [sqlmap](https://github.com/sqlmapproject/sqlmap) as an "adversary", running it against my regexes between every update to figure out what I needed to catch next, or if I caused a regression by accident. I also looked briefly to the [OWASP core rule set](https://github.com/coreruleset/coreruleset) for inspiration, but the rules defined there generally are too fine-grained to use here as they're designed to be incredibly specific.
 I did not have great prior familiarity of regex beyond knowing the basic syntax and having written simple regexes for other purposes before this, so [regex101](https://regex101.com) was useful for helping me iterate on my patterns via trial and error. As I worked on the regexes I both added strings that should match and false positives that should be avoided to the test bench, which meant I could instantly see whenever the pattern improved or worsened and could quickly iterate.
 
 The input validation/schema constraint filter was implemented by, based on the vulnerable endpoints in the backend, writing regexes attempting to constrain the input as much as possible while not affecting the intended input space. This required less work, as the regexes used were simple compared to the ones in the general regex filter.
