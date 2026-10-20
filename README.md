@@ -13,8 +13,9 @@ AI was used to generate the whole website contained in `cbr_project/website`,
 to write the Dockerfiles needed to containerize the application, and to define
 the SQL database.
 
-The student written part of the project is contained in
-`cbr_project/boolean` (Bucci) and `cbr_project/proxy` (Erikers and Ruggiero).
+The student written part of the project is contained in `cbr_project/boolean` (Bucci) and `cbr_project/proxy` (Erikers and Ruggiero).
+
+For more information, see [AI-DISCLOSURE.md](AI-DISCLOSURE.md)
 
 ## Reference
 - [SQLite documentation](https://www.sqlite.org/docs.html)
@@ -169,6 +170,8 @@ sqlmap -u 'http://127.0.0.1:8090/login' -p password \
 
 ## Individual contribution
 ### Martin Erikers (`erikers@kth.se`)
+Main contributions: [regex_rules.py](cbr_project/proxy/detectors/regex_rules.py), [tokenizer.py](cbr_project/proxy/detectors/tokenizer.py), [util.py](cbr_project/proxy/detectors/util.py), [schema_constraint.py](cbr_project/proxy/schema_constraint.py)
+
 The main focus of my personal contribution is the filters used in the proxy to filter out incoming attempts at SQL injection. 
 
 The first step working on the filters was researching existing options, and trying to figure out what was reasonable to build for the project. For this reason, I selected a general regex-based filter, an input validation filter (here called "schema constraint" despite not directly interacting with the database schema), and also included an existing tokenizing heuristic-based detector ([libinjection](https://github.com/libinjection/libinjection)) for comparison.
