@@ -3,7 +3,7 @@
 ## Problem statement
 
 The project aims to demonstrate how SQL injections can be 
-exploited, detected and blocked in a vulnerable web application. 
+exploited, detected and blocked in a vulnerable web application, with the additional assumption that the vulnerability cannot be directly patched in the backend.
 The project features a CLI tool to automatically dump a database given a blind SQLi vulnerable endpoint (boolean based extraction) and a proxy which inspects incoming requests and blocks or delays payloads that appear malicious. 
 The project therefore aims to cover both the attack and defense sides of the problem.
 
