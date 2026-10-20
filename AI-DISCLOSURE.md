@@ -10,7 +10,6 @@ Majority AI-generated, prompts unknown
 - [cbr_project/schema.sql](cbr_project/schema.sql)
 - [cbr_project/database.db](cbr_project/database.db)
 
-
 - [cbr_project/static/style.css](cbr_project/static/style.css)
 - [cbr_project/templates/base.html](cbr_project/templates/base.html)
 - [cbr_project/templates/cart.html](cbr_project/templates/cart.html)
@@ -20,6 +19,7 @@ Majority AI-generated, prompts unknown
 - [cbr_project/templates/register.html](cbr_project/templates/register.html)
 - [cbr_project/templates/restaurant.html](cbr_project/templates/restaurant.html)
 
+- [cbr_project/requirements.txt](cbr_project/requirements.txt)
 
 The following are deleted in the current version of the repo:
 - [cbr_project/injection/database.db](cbr_project/injection/database.db)
@@ -33,6 +33,4 @@ The following are deleted in the current version of the repo:
 - [cbr_project/injection/templates/register.html](cbr_project/injection/templates/register.html)
 - [cbr_project/injection/templates/restaurant.html](cbr_project/injection/templates/restaurant.html)
 
-
-- [cbr_project/requirements.txt](cbr_project/requirements.txt)
 - [cbr_project/README.md](cbr_project/README.md) (old, no relation to current readme)
