@@ -18,7 +18,6 @@ class Severity(Enum):
     MALICIOUS = 2
 
     def __str__(self):
-        # Keep log lines reading "suspicious" / "malicious", not "Severity.MALICIOUS".
         return self.name.lower()
 
     def __lt__(self, other):
@@ -28,11 +27,6 @@ class Severity(Enum):
 
 
 def words(text):
-    """Lowercased runs of letters in `text`.
-
-    "UNION, select1" -> ["union", "select"]. Used by detectors that want to
-    match whole SQL words rather than substrings (so "unionize" is not "union").
-    """
     found, current = [], []
     for ch in text:
         if ch.isalpha():
