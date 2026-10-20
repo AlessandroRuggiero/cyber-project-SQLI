@@ -96,31 +96,34 @@ be rejected by the proxy and should not appear there.
 
 ## Individual contributions
 
-### Martin Erikers (erikers@kth.se)
+### Martin Erikers (`erikers@kth.se`)
 
 TODO
 
-### Gioele Bucci (gioeleb@kth.se)
+### Gioele Bucci (`gioeleb@kth.se`)
 
-My contribution was the boolean-based SQL injection dumper in
-`cbr_project/boolean/db_dumper.py`. It automates the extraction of an SQLite
-database through a true/false response oracle, without relying on the
-application returning query results directly. The dumper first enumerates
-user-created tables through `sqlite_master`, then retrieves each table's
-column names using `pragma_table_info`. For every table it counts the rows and
-extracts them one at a time.
+I have developed a CLI tool that automatically dumps each table of a database
+as a separate `.csv` file by extracting data from an endpoint vulnerable to
+boolean-based SQL injection, automating the process of dumping an SQLite database.
+The dumper first enumerates user-created tables through `sqlite_master`, then
+retrieves each table's column names using `pragma_table_info`. For every table
+it counts the rows and extracts them one at a time.
 
 The extraction is performed by the shared `boolean_extractor` module. It
 determines the length of each query result and recovers every printable
 character with binary search, minimizing the number of HTTP requests compared
-with trying every possible character. The dumper combines column values with
-delimiters, quotes schema-derived identifiers safely, converts SQL `NULL`
+with trying every possible character sequentially. The dumper combines column values with delimiters, quotes schema-derived identifiers safely, converts SQL `NULL`
 values to a visible representation, and separates the recovered output back
 into rows and columns. Each table is saved as a separate UTF-8 CSV file in a
 `dump` directory, with sanitized filenames.
 
 The command-line interface supports both GET and POST injection points, custom
 boolean payload templates, response-status or response-text oracles, headers,
-cookies, and request timeouts. The accompanying `exploit.sh` examples
-demonstrate a full database dump and an authenticated POST-based dump through
-the proxy.
+cookies, and request timeouts. 
+The accompanying `exploit.sh` examples demonstrate a full database dump and an authenticated POST-based dump. The extraction logic is also easily expandable to support time-based extraction: the blind extraction concept remains the same, while
+the response oracle can be adapted to measure delays instead of evaluating
+true-or-false responses.
+
+The following video showcases the Boolean SQL dumper in use:
+
+<video src="https://github.com/AlessandroRuggiero/cyber-project-SQLI/raw/refs/heads/main/cbr_project/boolean/demo_boolean.mp4"></video>
