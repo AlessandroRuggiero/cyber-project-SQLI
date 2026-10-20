@@ -40,7 +40,7 @@ Weaknesses:
 (how to run the full site)
 ### Testing filters with the debug echo backend
 The regex and libinjection filters are toggled by commenting or uncommenting their lines in `cbr_project/proxy/detectors/__init__.py:48-68`, and the input validation/schema constraint filter can be toggled with the boolean at `cbr_project/proxy/config.py:45`.
-The `BLOCK-MODE` environment variable can be set to either `block` to block misbehaving IP addresses, `no_ban` to block individual injection attempts while not banning the clients, and `monitor` to just print received requests and what would have happened with the `block` mode.
+The `BLOCK-MODE` environment variable can be set to either `block` to block misbehaving IP addresses, `no_ban` to block individual injection attempts while not banning the clients, or `monitor` to just print received requests and what would have happened with the `block` mode.
 
 1. Make sure you have a virtual environment with the required dependencies
 ```bash
