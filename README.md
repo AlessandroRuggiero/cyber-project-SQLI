@@ -15,7 +15,7 @@ the SQL database.
 
 The student written part of the project is contained in `cbr_project/boolean` (Bucci) and `cbr_project/proxy` (Erikers and Ruggiero).
 
-For more information, see [AI-DISCLOSURE.md](AI-DISCLOSURE.md)
+For more information, see [Individual contribution](#individual-contribution) and [AI-DISCLOSURE.md](AI-DISCLOSURE.md)
 
 ## Reference
 - [SQLite documentation](https://www.sqlite.org/docs.html)
