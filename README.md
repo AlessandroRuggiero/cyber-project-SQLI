@@ -11,10 +11,32 @@
 - [regex101](https://regex101.com)
 ## Project documentation
 (main documentation, divided into domains)
+### Filtering
+The main filtering is done in `regex_rules.py` and `tokenizer.py` in the `cbr_project/proxy/detectors/` directory, and in `schema_constraint.py` in the `cbr_project/proxy/` directory.
+
+`regex_rules.py` contains the regex rule-based SQLi detection. It contains one function per filtering rule returning true if a match is found and false if not, which are all summed together in `apply_rules()` via different weights per rule. If the sum is greater than a certain limit, the `Severity.SUSPICIIOUS` result is returned. If the sum passes a higher threshold, `Severity.MALICIOUS` is returned. Currently, due to the small amount of filter functions included, the weights are set to almost always trigger a "malicious" response by themselves. However, the weights and thresholds can be adjusted to create a more fine-grained filter.
+Strengths:
+- Adaptable to any type of input
+- Can at its extreme be used to build a better, nuanced model for classifying injection attempts
+Weaknesses:
+- Writing the perfect set of regexes to identify all SQL injection is a very hard problem
+- Without a very large set of well-tuned rules, it suffers both a large risk of evasion tactics slipping through and a large rate of false positives, balanced by the level of paranoia in the rules and their weights towards the judgement
+
+`tokenizer.py` contains only the plumbing to implement `libinjection` detection.
+Strengths:
+- Few false positives; the token fingerprint approach used results in tightly defined patterns for finding injection attempts (there are still examples though)LÄNK
+Weaknesses:
+- A fair amount of false negatives
+- Can be defeated by padding inputs, as the fingerprints are based on up to max 5 tokens
+
+
+`schema_constraint.py` contains functions each corresponding to a particular input class, and `follows_schema()` which selects the correct function for a particular parameter name in the request.
+
+
 ## Testing documentation
 ### Website via docker
 (how to run the full site)
-### Testing filters with echo backend
+### Testing filters with the debug echo backend
 1. Create virtual environment and install dependencies:
 ```bash
 python -m venv .venv
