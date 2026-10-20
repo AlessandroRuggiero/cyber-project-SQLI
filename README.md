@@ -125,15 +125,10 @@ python3 -m cbr_project.init_db
 flask --app cbr_project.main:main run
 ```
 
-The backend is then available at <http://127.0.0.1:5000>. Test proxy payloads
-and run the automated tests with:
+The backend is then available at <http://127.0.0.1:5000>.
 
-```bash
-python cbr_project/proxy/http/run_http.py cbr_project/proxy/http/attacks.http --expect 403
-pytest
-```
 ### Testing filters with the debug echo backend
-The regex and libinjection filters are toggled by commenting or uncommenting their lines in `cbr_project/proxy/detectors/__init__.py:48-68`, and the input validation/schema constraint filter can be toggled with the boolean at `cbr_project/proxy/config.py:45`.
+The regex and libinjection filters are toggled by commenting or uncommenting their lines in `cbr_project/proxy/detectors/__init__.py:42-53`, and the input validation/schema constraint filter can be toggled with the boolean at `cbr_project/proxy/config.py:45`.
 The `BLOCK-MODE` environment variable can be set to either `block` to block misbehaving IP addresses, `no_ban` to block individual injection attempts while not banning the clients, or `monitor` to just print received requests and what would have happened with the `block` mode.
 
 1. Make sure you have a virtual environment with the required dependencies
