@@ -16,11 +16,18 @@ The main filtering is done in `regex_rules.py` and `tokenizer.py` in the `cbr_pr
 
 `regex_rules.py` contains the regex rule-based SQLi detection. It contains one function per filtering rule returning true if a match is found and false if not, which are all summed together in `apply_rules()` via different weights per rule. If the sum is greater than a certain limit, the `Severity.SUSPICIIOUS` result is returned. If the sum passes a higher threshold, `Severity.MALICIOUS` is returned. Currently, due to the small amount of filter functions included, the weights are set to almost always trigger a "malicious" response by themselves. However, the weights and thresholds can be adjusted to create a more fine-grained filter.
 Strengths:
-- Adaptable to any type of input
-- Can at its extreme be used to build a better, nuanced model for classifying injection attempts
+- Adaptable to any type of input passed on to the database
+- Larger, more detailed rule sets can lead to a relatively high accuracy of identifying injection attempts
 Weaknesses:
-- Writing the perfect set of regexes to identify all SQL injection is a very hard problem
-- Without a very large set of well-tuned rules, it suffers both a large risk of evasion tactics slipping through and a large rate of false positives, balanced by the level of paranoia in the rules and their weights towards the judgement
+- Writing the perfect set of regexes to identify all forms of SQL injection is a very difficult problem; one can often by accident either over- or undershoot the intended effect when working on complex regexes
+- Without a very large set of well-tuned rules, it suffers both a large risk of evasion tactics slipping through and a large rate of false positives, balanced by the level of paranoia in the rules and their weights
+
+`schema_constraint.py` contains functions each corresponding to a particular input class featured in the project site, and `follows_schema()` which selects the correct function to validate a particular parameter in the request based on its name.
+Strengths:
+- Very good accuracy; generally no false positives or negatives as every relevant input for this filter follows a strict format
+Weaknesses:
+- Doesn't work for all types of user input; in this project the website has a `password` parameter vulnerable which is hard/inadvisable to constrain without harming account security
+- As the input allowed gets broader, the regexes required to match them approaches the general regex rule case
 
 `tokenizer.py` contains only the plumbing to implement `libinjection` detection.
 Strengths:
@@ -28,10 +35,6 @@ Strengths:
 Weaknesses:
 - A fair amount of false negatives
 - Can be defeated by padding inputs, as the fingerprints are based on up to max 5 tokens
-
-
-`schema_constraint.py` contains functions each corresponding to a particular input class, and `follows_schema()` which selects the correct function for a particular parameter name in the request.
-
 
 ## Testing documentation
 ### Website via docker
@@ -44,7 +47,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements-libinjection.txt      # if libinjection filter is wanted
 ```
-- `libinjection` can be omitted if adding it isn't of interest; might however need to comment out a couple lines of code, too TODO ELABORATE
+- `libinjection` can be omitted if testing it isn't of interest; might however need to comment out a couple lines of code TODO ELABORATE
 
 2. Launch proxy with echo backend
 ```bash
@@ -54,7 +57,7 @@ BLOCK_MODE=no_ban uvicorn cbr_project.proxy.app:app --host 127.0.0.1 --port 8090
 python -m cbr_project.proxy.echo_backend
 ```
 - each command should be run in a different terminal
-- `BLOCK-MODE=no_ban` makes sure the proxy properly blocks requests that should be filtered, but disables the rate-limiting/banning functionality to enable faster brute force testing
+- `BLOCK-MODE=no_ban` disables the rate-limiting/banning functionality to enable faster brute force testing, while still making sure the proxy properly blocks requests that should be filtered
 
 3. Run sqlmap to test
 ```bash
