@@ -15,23 +15,37 @@
 ### Website via docker
 (how to run the full site)
 ### Testing filters with echo backend
-1. Make venv and install requirements:
+1. Create virtual environment and install dependencies:
 ```bash
-git clone https://github.com/AlessandroRuggiero/cyber-project-SQLI.git
-cd cyber-project-SQLI/
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements-libinjection.txt      # if libinjection filter is wanted
 ```
-2. Launch proxy with echo backend (in different terminals)
+- `libinjection` can be omitted if adding it isn't of interest; might however need to comment out a couple lines of code, too TODO ELABORATE
+
+2. Launch proxy with echo backend
 ```bash
 # proxy
 BLOCK_MODE=no_ban uvicorn cbr_project.proxy.app:app --host 127.0.0.1 --port 8090
 # echo pseudo-backend
 python -m cbr_project.proxy.echo_backend
 ```
-3. 
+- each command should be run in a different terminal
+- `BLOCK-MODE=no_ban` makes sure the proxy properly blocks requests that should be filtered, but disables the rate-limiting/banning functionality to enable faster brute force testing
+
+3. Run sqlmap to test
+```bash
+sqlmap -u 'http://127.0.0.1:8090/login' -p password \
+          --dbms=sqlite --level=5 --risk=3 \
+          --threads=1 --timeout=5 --batch \
+          --flush-session --fresh-queries --no-logging \
+          -v --ignore-code=403 --code=200 \
+          --data="email=a@b.se&name=John Doe&password=12345&id=1"
+```
+- This particular command tries SQL injection on the `password` field sent to the login endpoint, suitable for testing the non input validation-based filters (email, name and id in this (fictional) endpoint are protected with input validation, resulting in sqlmap not being able to do much of anything)
+- Edit the `-p` switch to change targeted field; omit it to target all available fields.
+
 ## Individual contribution
 ### Martin Erikers (erikers@kth.se)
 Like the other group members, I helped plan and decide what the project should be about, including the scope and limitations. The main focus of my personal contribution is the filters used in the proxy to filter out incoming attempts at SQL injection. The first step towards this was researching existing options, and trying to figure out what was reasonable to build for the project. For this reason, I selected a general regex-based filter, an input validation filter (called "schema constraint" despite not directly interacting with the database schema), and also included an existing tokenizing heuristic-based detector ([libinjection](https://github.com/libinjection/libinjection)) for comparison.
