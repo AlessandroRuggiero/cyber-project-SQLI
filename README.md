@@ -11,7 +11,7 @@
 - [regex101](https://regex101.com)
 ## Project documentation
 ### Filtering
-The filtering is done in [regex_rules.py](cbr_project/proxy/detectors/regex_rules.py), [tokenizer.py](cbr_project/proxy/detectors/tokenizer.py),  and  [schema_constraint.py](cbr_project/proxy/schema_constraint.py).
+The filtering is done in the proxy, using the filters found in [regex_rules.py](cbr_project/proxy/detectors/regex_rules.py), [tokenizer.py](cbr_project/proxy/detectors/tokenizer.py),  and  [schema_constraint.py](cbr_project/proxy/schema_constraint.py).
 
 `regex_rules.py` contains the regex rule-based SQLi detection. It contains one function per filtering rule, returning true if a match is found and false if not, which are then all summed together in `apply_rules()` via different weights per rule. If the sum is greater than a certain threshold, the `Severity.SUSPICIIOUS` result is returned. If the sum passes a higher threshold, `Severity.MALICIOUS` is returned. Currently, due to the small amount of filter functions included, the weights are set to almost always trigger a "malicious" detection by themselves. However, the weights and thresholds can be adjusted to create a more fine-grained filter.
 Strengths:
