@@ -36,3 +36,7 @@ The following are deleted in the current version of the repo:
 - [cbr_project/injection/templates/restaurant.html](cbr_project/injection/templates/restaurant.html)
 
 - [cbr_project/README.md](cbr_project/README.md) (old, no relation to current readme)
+
+## Gioele Bucci
+I've used AI to improve the UI of the website (making the model iterate on the work of Siri). Prompt was: "Can you give the website a facelift? Only improve it UI-wise and do not fix the intentionally vulnerable SQL queries".
+Also used AI to setup containerization for the project to allow for easier deployment and project reproducibility. Prompt was: "Can you conteinerize our project? Create two separate containers for the backend and proxy and a single Docker compose file to bring the project up or down".
