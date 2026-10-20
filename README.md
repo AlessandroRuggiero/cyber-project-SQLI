@@ -12,6 +12,7 @@ The project therefore aims to cover both the attack and defense sides of the pro
 AI was used to generate the whole website contained in `cbr_project/website`,
 to write the Dockerfiles needed to containerize the application, and to define
 the SQL database.
+Also `cbr_project/proxy/echo_backend` was generated to be able to test the proxy decoupled from the app.
 
 The student written part of the project is contained in `cbr_project/boolean` (Bucci) and `cbr_project/proxy` (Erikers and Ruggiero).
 
@@ -211,3 +212,40 @@ the response oracle can be adapted to measure delays instead of evaluating
 true-or-false responses.
 
 The video at [cbr_project/boolean/demo_boolean.mp4](https://github.com/AlessandroRuggiero/cyber-project-SQLI/blob/main/cbr_project/boolean/demo_boolean.mp4) showcases the Boolean SQL dumper in use against the project's website.
+
+### Ruggiero Alessandro (ruggiero@kth.se)
+I have developed the proxy that sits in front of the vulnerable app.
+This acts as a Reference monitor, it analyzes all the requests directed to the app and scores them in 3 categories:
+Clean, Suspicious and Malicious.
+
+inputs checked: path, query, form, JSON, body, cookies and headers
+
+What happens to a request in block mode (the default):
+
+| Verdict    | Score added | Action                                         |
+|------------|-------------|------------------------------------------------|
+| Clean      | 0           | forwarded  |
+| Suspicious | +3          | forwarded, IP score goes up                    |
+| Malicious  | +10         | blocked with `403`                             |
+
+Each IP has a score that halves every 120 s of inactivity. The score decides what happens to its next requests, even clean ones:
+
+| IP score | Action                                                      |
+|----------|-------------------------------------------------------------|
+| ≤ 10     | pass                                                        |
+| 10 - 25  | tarpit: delayed up to 5s, growing with the score            |
+| > 25     | banned: `429` with `Retry-After: 30`                        |
+
+In monitor mode nothing is blocked or delayed; the verdict and the action that would have been taken are only logged.
+All thresholds can be changed through environment variables in `cbr_project/proxy/config.py`.
+
+The proxy uses FastAPI to make DoS attacks harder, since standard Flask keeps one thread active per request.
+
+The reasoning behind the reputation is that blind SQL injection needs
+thousands of requests, so even payloads that only look suspicious quickly push
+the attacker into the tarpit and then the ban. Scores decay over time, so a
+legitimate user hitting an occasional false positive is not affected.
+
+Detectors are modules that can be added to or removed from the `DETECTORS` list in
+`cbr_project/proxy/detectors/__init__.py`.
+The effective severity for a request is the max of the ones returned by the detectors.
