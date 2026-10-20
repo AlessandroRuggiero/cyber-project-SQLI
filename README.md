@@ -184,7 +184,7 @@ I did not have great prior familiarity of regex beyond knowing the basic syntax 
 
 The input validation/schema constraint filter was implemented by, based on the vulnerable endpoints in the backend, writing regexes attempting to constrain the input as much as possible while not affecting the intended input space. This required less work, as the regexes used were simple compared to the ones in the general regex filter.
 
-The tokenizing detector used is a third-party library, and as such only needed a small amount plumbing for integration into the proxy.
+The tokenizing detector used is a third-party library, and as such only needed a small amount of plumbing for integration into the proxy.
 
 
 ### Gioele Bucci (`gioeleb@kth.se`)
