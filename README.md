@@ -124,6 +124,4 @@ The accompanying `exploit.sh` examples demonstrate a full database dump and an a
 the response oracle can be adapted to measure delays instead of evaluating
 true-or-false responses.
 
-The following video showcases the Boolean SQL dumper in use:
-
-<video src="https://github.com/AlessandroRuggiero/cyber-project-SQLI/raw/refs/heads/main/cbr_project/boolean/demo_boolean.mp4"></video>
+The video at [cbr_project/boolean/demo_boolean.mp4](https://github.com/AlessandroRuggiero/cyber-project-SQLI/blob/main/cbr_project/boolean/demo_boolean.mp4) showcases the Boolean SQL dumper in use against the project's website.
