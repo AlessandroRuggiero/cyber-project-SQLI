@@ -2,16 +2,24 @@
 
 ## Problem statement
 
-The project aims to demonstrate how a non-trivial SQL injection (blind) can be 
+The project aims to demonstrate how SQL injections can be 
 exploited, detected and blocked in a vulnerable web application. 
-The project features a CLI tool to automatically dump a database given a SQLi vulnerable endpoint and proxy which inspects incoming requests and blocks or delays
-payloads that appear malicious. The project therefore aims to cover both the attacker and defender sides of the problem.
+The project features a CLI tool to automatically dump a database given a blind SQLi vulnerable endpoint (boolean based extraction) and a proxy which inspects incoming requests and blocks or delays payloads that appear malicious. 
+The project therefore aims to cover both the attack and defense sides of the problem.
+
+## AI Usage Disclosure 
+
+AI was used to generate the whole website contained in `cbr_project/website`,
+to write the Dockerfiles needed to containerize the application, and to define
+the SQL database.
+
+The student written part of the project is contained in
+`cbr_project/boolean` (Bucci) and `cbr_project/proxy` (Erikers and Ruggiero).
 
 ## Reference
 
-- [PayloadSQL Injection](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/SQL%20Injection/SQLite%20Injection.md)
-
 - [SQLite documentation](https://sqlite.org/docs.html)
+- [PayloadAllTheThings SQLite Injection](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/SQL%20Injection/SQLite%20Injection.md)
 
 ## Project documentation
 
