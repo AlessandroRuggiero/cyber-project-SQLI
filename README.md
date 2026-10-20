@@ -11,6 +11,5 @@
 ### Testing filters with echo backend
 (how to run the proxy w echo backend)
 ## Individual contribution
-### Martin Erikers
-erikers@kth.se
+### Martin Erikers (erikers@kth.se)
 ### etc
