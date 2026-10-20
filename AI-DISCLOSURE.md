@@ -5,7 +5,7 @@ No AI use.
 [link to file](cbr_project/relative/link/here) - this and that was generated. Prompt: "hey generate me this and that, thanks"
 
 ## Siri, left group
-Majority AI-generated, prompts unknown
+Majority AI-generated, prompts unknown, all/most files have changed since
 - [cbr_project/main.py](cbr_project/main.py)
 - [cbr_project/schema.sql](cbr_project/schema.sql)
 - [cbr_project/database.db](cbr_project/database.db)
