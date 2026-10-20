@@ -30,9 +30,9 @@ Weaknesses:
 
 [tokenizer.py](cbr_project/proxy/detectors/tokenizer.py) contains only the plumbing to implement `libinjection` detection. It works by tokenizing the input, and comparing the produced set of tokens to a database of fingerprints.
 Strengths:
-- Few false positives as the token fingerprint approach used results in tightly defined patterns for finding injection attempts
+- Few false positives as the token fingerprint approach used leads to very specific patterns to match potential injection attempts against
 Weaknesses:
-- A fair amount of false negatives
+- Some amount of false negatives, it prioritizes accuracy over catching every attempt
 - Can be defeated by padding inputs, as the fingerprints are built from up to a maximum of 5 tokens
 
 ## Testing documentation
